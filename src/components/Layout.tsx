@@ -1,5 +1,12 @@
 import { useState } from "react"
-import { Box, IconButton, Typography, Tooltip } from "@mui/material"
+import {
+  Box,
+  IconButton,
+  Typography,
+  Tooltip,
+  Avatar,
+  Badge
+} from "@mui/material"
 import { Outlet, useNavigate, useLocation } from "react-router-dom"
 import MenuIcon from "@mui/icons-material/Menu"
 import HomeIcon from "@mui/icons-material/Home"
@@ -10,8 +17,30 @@ import DiscountIcon from "@mui/icons-material/Discount"
 import ControlCameraIcon from "@mui/icons-material/ControlCamera"
 import ViewModuleIcon from "@mui/icons-material/ViewModule"
 import GroupIcon from "@mui/icons-material/Group"
+import NotificationsIcon from "@mui/icons-material/Notifications"
+import { keyframes, Stack } from "@mui/system"
+import Divider from "@mui/material/Divider"
+import MenuList from "@mui/material/MenuList"
+import MenuItem from "@mui/material/MenuItem"
+import ListItemText from "@mui/material/ListItemText"
+import ListItemIcon from "@mui/material/ListItemIcon"
+import Menu from "@mui/material/Menu"
+import AccountCircleIcon from "@mui/icons-material/AccountCircle"
+import PersonIcon from "@mui/icons-material/Person"
+import ExitToAppIcon from "@mui/icons-material/ExitToApp"
 
 const Layout = () => {
+  // Thêm keyframes cho hiệu ứng
+  const ripple = keyframes`
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+`
   const [expanded, setExpanded] = useState<boolean>(true)
   const navigate = useNavigate()
   const location = useLocation()
@@ -30,6 +59,30 @@ const Layout = () => {
     { icon: <GroupIcon />, label: "User", path: "/users" },
     { icon: <ViewModuleIcon />, label: "Module", path: "/modules" }
   ]
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleProfile = () => {
+    // Xử lý chuyển đến trang profile
+    handleMenuClose()
+  }
+
+  const handleSignOut = () => {
+    // Xử lý đăng xuất
+    handleMenuClose()
+    // Chuyển hướng ngay lập tức
+    navigate("/login", {
+      replace: true
+    })
+  }
 
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
@@ -45,7 +98,8 @@ const Layout = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          padding: "10px"
+          padding: "10px",
+          zIndex: 1000
         }}
       >
         {/* Nút mở rộng/thu nhỏ sidebar */}
@@ -108,16 +162,146 @@ const Layout = () => {
         </Box>
       </Box>
 
-      {/* Nội dung chính */}
+      {/* Main Content Area */}
       <Box
         sx={{
-          marginLeft: expanded ? "16%" : "6%",
-          width: expanded ? "85%" : "95%",
-          transition: "width 0.3s ease",
-          padding: "20px"
+          flexGrow: 1,
+          marginLeft: expanded ? "15%" : "5%",
+          transition: "margin-left 0.3s ease",
+          display: "flex",
+          flexDirection: "column"
         }}
       >
-        <Outlet />
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            p: 2,
+            boxShadow: "0.5",
+            position: "sticky",
+            top: 0,
+            zIndex: 1100
+          }}
+        >
+          <Tooltip title="Thông báo">
+            <IconButton
+              sx={{
+                mr: 2,
+                position: "relative",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.05)"
+                }
+              }}
+            >
+              {/* Hiệu ứng sóng */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  animation: `${ripple} 2s infinite`,
+                  border: "2px solid",
+                  borderColor: "primary.main",
+                  pointerEvents: "none"
+                }}
+              />
+              <Badge badgeContent={4} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+          <Stack direction="row" spacing={2} alignItems={"center"}>
+            <Box>
+              <Typography component={"p"} color="#0B0E14">
+                Gami
+              </Typography>
+              <Typography
+                component={"span"}
+                color="#0B0E14"
+                sx={{
+                  fontSize: "15px"
+                }}
+              >
+                Admin Profile
+              </Typography>
+            </Box>
+            <Avatar
+              sx={{
+                cursor: "pointer",
+                bgcolor: "primary.main",
+                width: 40,
+                height: 40
+              }}
+              onClick={handleMenuOpen}
+            >
+              U
+            </Avatar>
+          </Stack>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleMenuClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right"
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right"
+            }}
+            PaperProps={{
+              sx: {
+                width: 200,
+                overflow: "visible",
+                mt: 1.5
+              }
+            }}
+          >
+            <MenuList>
+              {/* Mục Gami */}
+              <MenuItem onClick={handleMenuClose}>
+                <ListItemIcon>
+                  <AccountCircleIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Gami</ListItemText>
+              </MenuItem>
+
+              <Divider />
+
+              {/* Profile Page */}
+              <MenuItem onClick={handleProfile}>
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Profile Page</ListItemText>
+              </MenuItem>
+
+              {/* Sign Out */}
+              <MenuItem onClick={handleSignOut}>
+                <ListItemIcon>
+                  <ExitToAppIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Sign Out</ListItemText>
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        </Box>
+
+        {/* Content */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflow: "auto",
+            p: 3,
+            bgcolor: "background.default"
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   )

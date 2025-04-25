@@ -12,51 +12,38 @@ import DialogContent from "@mui/material/DialogContent"
 import DialogTitle from "@mui/material/DialogTitle"
 import TextField from "@mui/material/TextField"
 import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye"
-import Select from "@mui/material/Select"
+import Select, { SelectChangeEvent } from "@mui/material/Select"
 import MenuItem from "@mui/material/MenuItem"
 import InputLabel from "@mui/material/InputLabel"
 import FormControl from "@mui/material/FormControl"
+import Chip from "@mui/material/Chip"
+import Stack from "@mui/material/Stack"
+import { getOrderAPI } from "../../api"
+import { IOrder } from "../../interface/order"
+import { Typography } from "@mui/material"
 
 const paginationModel = { page: 0, pageSize: 5 }
 
 export default function Order() {
-  const initalRow = [
-    {
-      id: 1,
-      Recipient_name: "Lê đình hùng",
-      Total_price: "100.000 VND",
-      Parent_id: 0,
-      Created_at: "2024-03-05"
-    },
-    {
-      id: 2,
-      Recipient_name: "Lê đình nam",
-      Total_price: "100.000 VND",
-      Parent_id: 1,
-      Created_at: "2024-03-05"
-    },
-    {
-      id: 3,
-      Recipient_name: "lê đình trình",
-      Total_price: "100.000 VND",
-      Parent_id: 1,
-      Created_at: "2024-03-05"
-    }
-  ]
-  const [rows, setRow] = React.useState(initalRow)
+  const [age, setAge] = React.useState("")
+
+  const handleChangeh = (event: SelectChangeEvent) => {
+    setAge(event.target.value as string)
+  }
+
+  const [rows, setRow] = React.useState<IOrder[]>([])
   const [open, setOpen] = React.useState(false)
   const [editingRow, setEditingRow] = React.useState(null)
   const [formData, setFormData] = React.useState({
     id: "",
     Recipient_name: "",
     Total_price: "",
-    Parent_id: "",
     Slug: "",
     Created_at: ""
   })
   const handleOpen = (row = null) => {
     if (row) {
-      setEditingRow(row.id)
+      setEditingRow(row?.id)
       setFormData(row)
     } else {
       setEditingRow(null)
@@ -64,7 +51,6 @@ export default function Order() {
         id: "",
         Recipient_name: "",
         Total_price: "",
-        Parent_id: "",
         Slug: "",
         Created_at: ""
         // Status: "pending"
@@ -84,65 +70,97 @@ export default function Order() {
     {
       field: "id",
       headerName: "ID",
-      width: 90,
       align: "center",
+      flex: 0.5,
       headerAlign: "center"
+    },
+    {
+      field: "Product_item",
+      headerName: "Product item",
+      align: "center",
+      flex: 1.5,
+      headerAlign: "center",
+      renderCell: (params) => {
+        const more = params.row?.more
+        return (
+          <Stack>
+            <Stack
+              display="flex"
+              alignItems={"center"}
+              justifyContent={"center"}
+            >
+              <img
+                src={params.row?.Product_item?.images?.url}
+                alt={params.row?.Product_item?.name}
+                style={{
+                  width: "50px", // giới hạn chiều rộng
+                  height: "50px", // giới hạn chiều cao
+                  objectFit: "cover", // giữ tỉ lệ, cắt dư nếu cần
+                  borderRadius: "6px" // bo góc nếu thích
+                }}
+              />
+            </Stack>
+            {more && (
+              <Typography variant="caption" color="text.secondary">
+                {more}
+              </Typography>
+            )}
+          </Stack>
+        )
+      }
     },
     {
       field: "Recipient_name",
       headerName: "Recipient name",
-      width: 200,
       align: "center",
+      flex: 1.5,
       headerAlign: "center"
     },
     {
       field: "Total_price",
       headerName: "Total price",
-      width: 200,
       align: "center",
-      headerAlign: "center"
-    },
-    {
-      field: "Parent_id",
-      headerName: "Parent_id",
-      type: "number",
-      width: 100,
-      align: "center",
+      flex: 1.5,
       headerAlign: "center"
     },
     {
       field: "Status",
       headerName: "Status",
-      width: 300,
-      renderCell: (params) => (
-        <Box sx={{ minWidth: 80, minHeight: 40 }}>
-          <FormControl fullWidth size="small" margin="dense">
-            <InputLabel id="status-label">Status</InputLabel>
-            <Select
-              labelId="status-label"
-              name="Status"
-              value={formData.Status}
-              onChange={handleChange}
-            >
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="cancel">Cancel</MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-      ),
+      flex: 2,
       align: "center",
+      headerAlign: "center",
+      renderCell: (params) => {
+        let color: "default" | "success" | "info" = "default"
+
+        switch (params.row.Status) {
+          case "CONFIRMED":
+            color = "success"
+            break
+          case "WAITING_CONFIRMATION":
+            color = "default"
+            break
+          // bạn có thể thêm các case khác nếu cần
+          default:
+            color = "info"
+            break
+        }
+
+        return <Chip label={params.row.Status} color={color} />
+      }
+    },
+    {
+      field: "Payment_method",
+      headerName: "Payment method",
+      align: "center",
+      flex: 1.5,
       headerAlign: "center"
     },
     {
-      field: "Created_at",
-      headerName: "Created_at",
-      width: 170
-    },
-    {
       field: "Actions",
+      headerAlign: "center",
+      align: "center",
+      flex: 2,
       headerName: "Actions",
-      width: 150,
       renderCell: (params) => (
         <Box>
           <IconButton color="primary" onClick={() => handleOpen(params.row)}>
@@ -159,6 +177,23 @@ export default function Order() {
     }
   ]
 
+  React.useEffect(() => {
+    const fetchOrderApi = async () => {
+      const res = await getOrderAPI(1, 5, "DESC", "")
+      setRow(
+        res.data.map((item: IOrder) => ({
+          id: item.order_code,
+          Recipient_name: item.name,
+          Status: item.status,
+          Total_price: item.final_price,
+          Product_item: item.product,
+          more: item.more,
+          Payment_method: item.payment_method
+        }))
+      )
+    }
+    fetchOrderApi()
+  }, [])
   return (
     <Box>
       <Box>
@@ -171,6 +206,49 @@ export default function Order() {
           Thêm mới
         </Button>
       </Box>
+      <Stack
+        direction={"row"}
+        spacing={2}
+        sx={{ mt: 2, mb: 3 }}
+        alignItems={"center"}
+      >
+        <Box sx={{ minWidth: 200 }}>
+          <FormControl fullWidth>
+            <InputLabel id="demo-simple-select-label">trạng thái</InputLabel>
+            <Select
+              labelId="demo-simple-select-label"
+              id="demo-simple-select"
+              value={age}
+              label="trạng thái"
+              onChange={handleChangeh}
+            >
+              <MenuItem value={10}>Ten</MenuItem>
+              <MenuItem value={20}>Twenty</MenuItem>
+              <MenuItem value={30}>Thirty</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+        <Box sx={{ minWidth: 200 }}>
+          <FormControl fullWidth>
+            <InputLabel id="demo-simple-select-label">Thời gian</InputLabel>
+            <Select
+              labelId="demo-simple-select-label"
+              id="demo-simple-select"
+              value={age}
+              label="Thời gian"
+              onChange={handleChangeh}
+            >
+              <MenuItem value={10}>Mới nhất</MenuItem>
+              <MenuItem value={20}>Cũ nhất</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+        <Box>
+          <Button variant="contained" color="primary">
+            Lọc đơn hàng
+          </Button>
+        </Box>
+      </Stack>
       <Paper sx={{ height: 650, width: "100%" }} elevation={6}>
         <DataGrid
           rows={rows}
@@ -204,14 +282,7 @@ export default function Order() {
             value={formData.Desc}
             onChange={handleChange}
           />
-          <TextField
-            label="Parent ID"
-            name="Parent_id"
-            fullWidth
-            margin="dense"
-            value={formData.Parent_id}
-            onChange={handleChange}
-          />
+
           <TextField
             label="Slug"
             name="Slug"
