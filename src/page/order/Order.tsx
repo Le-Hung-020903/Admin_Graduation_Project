@@ -4,13 +4,6 @@ import Paper from "@mui/material/Paper"
 import Button from "@mui/material/Button"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
-import DeleteIcon from "@mui/icons-material/Delete"
-import EditIcon from "@mui/icons-material/Edit"
-import Dialog from "@mui/material/Dialog"
-import DialogActions from "@mui/material/DialogActions"
-import DialogContent from "@mui/material/DialogContent"
-import DialogTitle from "@mui/material/DialogTitle"
-import TextField from "@mui/material/TextField"
 import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye"
 import Select, { SelectChangeEvent } from "@mui/material/Select"
 import MenuItem from "@mui/material/MenuItem"
@@ -21,6 +14,7 @@ import Stack from "@mui/material/Stack"
 import { getOrderAPI } from "../../api"
 import { IOrder } from "../../interface/order"
 import { Typography } from "@mui/material"
+import { Link } from "react-router-dom"
 
 const paginationModel = { page: 0, pageSize: 5 }
 
@@ -32,8 +26,6 @@ export default function Order() {
   }
 
   const [rows, setRow] = React.useState<IOrder[]>([])
-  const [open, setOpen] = React.useState(false)
-  const [editingRow, setEditingRow] = React.useState(null)
   const [formData, setFormData] = React.useState({
     id: "",
     Recipient_name: "",
@@ -41,31 +33,12 @@ export default function Order() {
     Slug: "",
     Created_at: ""
   })
-  const handleOpen = (row = null) => {
-    if (row) {
-      setEditingRow(row?.id)
-      setFormData(row)
-    } else {
-      setEditingRow(null)
-      setFormData({
-        id: "",
-        Recipient_name: "",
-        Total_price: "",
-        Slug: "",
-        Created_at: ""
-        // Status: "pending"
-      })
-    }
-    setOpen(true)
-  }
+
   // Xử lý thay đổi input
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
-  const handleDelete = (id: number) => {}
-  const handleSubmit = () => {}
-  const handleClose = () => setOpen(false)
   const columns: GridColDef[] = [
     {
       field: "id",
@@ -83,7 +56,13 @@ export default function Order() {
       renderCell: (params) => {
         const more = params.row?.more
         return (
-          <Stack>
+          <Stack
+            direction={"row"}
+            spacing={1}
+            alignItems={"center"}
+            justifyContent={"center"}
+            mt={1}
+          >
             <Stack
               display="flex"
               alignItems={"center"}
@@ -163,15 +142,11 @@ export default function Order() {
       headerName: "Actions",
       renderCell: (params) => (
         <Box>
-          <IconButton color="primary" onClick={() => handleOpen(params.row)}>
-            <RemoveRedEyeIcon />
-          </IconButton>
-          <IconButton color="primary" onClick={() => handleOpen(params.row)}>
-            <EditIcon />
-          </IconButton>
-          <IconButton color="error" onClick={() => handleDelete(params.row.id)}>
-            <DeleteIcon />
-          </IconButton>
+          <Link to={`/order/${params.row.id}`}>
+            <IconButton color="primary">
+              <RemoveRedEyeIcon />
+            </IconButton>
+          </Link>
         </Box>
       )
     }
@@ -182,7 +157,7 @@ export default function Order() {
       const res = await getOrderAPI(1, 5, "DESC", "")
       setRow(
         res.data.map((item: IOrder) => ({
-          id: item.order_code,
+          id: item.id,
           Recipient_name: item.name,
           Status: item.status,
           Total_price: item.final_price,
@@ -197,14 +172,11 @@ export default function Order() {
   return (
     <Box>
       <Box>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpen()}
-          sx={{ mb: 1 }}
-        >
-          Thêm mới
-        </Button>
+        <Link to={"/order/create"}>
+          <Button variant="contained" color="primary" sx={{ mb: 1 }}>
+            Thêm mới
+          </Button>
+        </Link>
       </Box>
       <Stack
         direction={"row"}
@@ -260,47 +232,6 @@ export default function Order() {
           rowHeight={70}
         />
       </Paper>
-      {/* Modal nhập dữ liệu */}
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>
-          {editingRow !== null ? "Chỉnh sửa dữ liệu" : "Thêm mới dữ liệu"}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Name"
-            name="Name"
-            fullWidth
-            margin="dense"
-            value={formData.Name}
-            onChange={handleChange}
-          />
-          <TextField
-            label="Desc"
-            name="Desc"
-            fullWidth
-            margin="dense"
-            value={formData.Desc}
-            onChange={handleChange}
-          />
-
-          <TextField
-            label="Slug"
-            name="Slug"
-            fullWidth
-            margin="dense"
-            value={formData.Slug}
-            onChange={handleChange}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="secondary">
-            Hủy
-          </Button>
-          <Button onClick={handleSubmit} color="primary">
-            {editingRow !== null ? "Lưu" : "Thêm"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   )
 }

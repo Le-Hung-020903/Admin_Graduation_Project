@@ -19,6 +19,7 @@ import CreateRole from "./page/role/CreateRole/CreateRole"
 import EditRole from "./page/role/EditRole/EditRole"
 import Modules from "./page/modules/Modules"
 import User from "./page/user/User"
+import CreateOrder from "./page/order/create/CreateOrder"
 
 const router = createBrowserRouter([
   {
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
           const res = await authorizedAxiosInstance.get("/order")
           return res.data.data
         }
+      },
+      {
+        path: "order/create",
+        element: <CreateOrder />
       },
       { path: "order/:id", element: <OrderDetail /> },
       {

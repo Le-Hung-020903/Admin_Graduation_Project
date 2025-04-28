@@ -1,12 +1,10 @@
 import { useState } from "react"
-import {
-  Box,
-  IconButton,
-  Typography,
-  Tooltip,
-  Avatar,
-  Badge
-} from "@mui/material"
+import Box from "@mui/material/Box"
+import IconButton from "@mui/material/IconButton"
+import Typography from "@mui/material/Typography"
+import Tooltip from "@mui/material/Tooltip"
+import Avatar from "@mui/material/Avatar"
+import Badge from "@mui/material/Badge"
 import { Outlet, useNavigate, useLocation } from "react-router-dom"
 import MenuIcon from "@mui/icons-material/Menu"
 import HomeIcon from "@mui/icons-material/Home"

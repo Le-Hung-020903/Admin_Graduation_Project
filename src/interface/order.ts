@@ -13,3 +13,51 @@ export interface IOrder {
   }
   more: string
 }
+interface Image {
+  id: number
+  url: string
+}
+
+interface Product {
+  id: number
+  name: string
+  images: Image[]
+}
+
+interface Variant {
+  id: number
+  name: string
+  price: number
+}
+
+interface OrderDetail {
+  id: number
+  quantity: number
+  product: Product
+  variant: Variant
+}
+interface User {
+  email: string
+}
+interface Address {
+  name: string
+  phone: string
+  province: string
+  district: string
+  ward: string
+  street: string
+}
+
+export interface IOrderDetail {
+  id: number
+  total_price: number
+  final_price: number
+  note: string
+  user: User
+  status: string
+  order_code: string
+  payment_method: string
+  created_at: string
+  orderDetails: OrderDetail[]
+  address: Address
+}
