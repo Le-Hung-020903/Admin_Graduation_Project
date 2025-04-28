@@ -15,28 +15,57 @@ import TableContainer from "@mui/material/TableContainer"
 import TableHead from "@mui/material/TableHead"
 import TableRow from "@mui/material/TableRow"
 import Paper from "@mui/material/Paper"
+import Backdrop from "@mui/material/Backdrop"
+import Modal from "@mui/material/Modal"
+import Fade from "@mui/material/Fade"
+import Radio from "@mui/material/Radio"
+import RadioGroup from "@mui/material/RadioGroup"
+import FormControlLabel from "@mui/material/FormControlLabel"
+import FormControl from "@mui/material/FormControl"
+import AddIcon from "@mui/icons-material/Add"
 import Avatar from "@mui/material/Avatar"
 import TextField from "@mui/material/TextField"
-import { Button } from "@mui/material"
-import { getOrderDetailAPI } from "../../../api"
+import Button from "@mui/material/Button"
+import Select from "@mui/material/Select"
+import MenuItem from "@mui/material/MenuItem"
+import Checkbox from "@mui/material/Checkbox"
+import { getAddressAPI, getOrderDetailAPI } from "../../../api"
 import { useParams } from "react-router-dom"
-import { IOrderDetail } from "../../../interface/order"
+import { IAddress, IOrderDetail } from "../../../interface/order"
 import dayjs from "dayjs"
 import { formattedAmount } from "../../../utils/formatMoney"
 
+const style = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: 500,
+  bgcolor: "background.paper",
+  boxShadow: 24,
+  p: 4,
+  borderRadius: "10px"
+}
 const OrderDetail = () => {
   const { id } = useParams()
+  const [open, setOpen] = React.useState(false)
+  const handleOpen = () => setOpen(true)
+  const handleClose = () => setOpen(false)
   const [order, setOrder] = useState<IOrderDetail | null>(null)
   const [status, setStatus] = useState<string>(order?.status || "")
-  const [address, setAddress] = useState(
-    order?.address || {
-      province: "",
-      district: "",
-      ward: "",
-      street: ""
-    }
+  const [selectedAddress, setSelectedAddress] = useState<IAddress | null>(null)
+  const [openEditAddress, setOpenEditAddress] = useState<boolean>(false)
+  const [address, setAddress] = useState<IAddress[]>([])
+  const handleOpenEditAddress = () => setOpenEditAddress(!openEditAddress)
+  // State
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null
   )
 
+  // Hàm xử lý khi bấm "Cập nhật"
+  const handleUpdateAddress = (id: number) => {
+    console.log("Địa chỉ cần cập nhật:", id)
+  }
   const orderStatus = [
     { value: "PENDING", label: "Đang chờ" },
     { value: "WAITING_CONFIRMATION", label: "Chờ xác nhận" },
@@ -50,9 +79,14 @@ const OrderDetail = () => {
       const res = await getOrderDetailAPI(Number(id))
       setOrder(res.data)
       setStatus(res.data.status)
-      setAddress(res.data.address)
+      setSelectedAddress(res.data.address)
+    }
+    const fetchAddress = async () => {
+      const res = await getAddressAPI()
+      setAddress(res.data)
     }
     fetchOrderDetail()
+    fetchAddress()
   }, [id])
   return (
     <Box>
@@ -476,12 +510,14 @@ const OrderDetail = () => {
                 alignItems={"center"}
               >
                 <Typography>Address</Typography>
-                <Button variant="outlined">Thay đổi</Button>
+                <Button variant="outlined" onClick={handleOpen}>
+                  Thay đổi
+                </Button>
               </Stack>
               <TextField
                 id="filled-read-only-input"
                 label=""
-                value={`${address.street}, ${address.ward}, ${address.district}, ${address.province}`}
+                value={`${selectedAddress?.street}, ${selectedAddress?.ward}, ${selectedAddress?.district}, ${selectedAddress?.province}`}
                 variant="filled"
                 slotProps={{
                   input: {
@@ -506,8 +542,258 @@ const OrderDetail = () => {
           </Paper>
         </Grid>
       </Grid>
+      <Box>
+        <Modal
+          aria-labelledby="transition-modal-title"
+          aria-describedby="transition-modal-description"
+          open={open}
+          onClose={handleClose}
+          closeAfterTransition
+          slots={{ backdrop: Backdrop }}
+          slotProps={{
+            backdrop: {
+              timeout: 500
+            }
+          }}
+        >
+          <Fade in={open}>
+            <Box sx={style}>
+              <Typography
+                id="transition-modal-title"
+                variant="h6"
+                component="h2"
+              >
+                {openEditAddress ? "Add new address" : "Delivery address"}
+              </Typography>
+              {openEditAddress ? (
+                <Box>
+                  {/* Form thêm địa chỉ */}
+                  <Box>
+                    <Box
+                      sx={{
+                        mt: 3
+                      }}
+                    >
+                      <Typography>Full name:</Typography>
+                      <TextField
+                        id="outlined-basic"
+                        label="name"
+                        variant="outlined"
+                        sx={{
+                          mt: 1,
+                          width: "100%"
+                        }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2
+                      }}
+                    >
+                      <Typography>Phone number:</Typography>
+                      <TextField
+                        id="outlined-basic"
+                        label="phone"
+                        variant="outlined"
+                        sx={{
+                          mt: 1,
+                          width: "100%"
+                        }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2
+                      }}
+                    >
+                      <Typography>Address:</Typography>
+                      <FormControl
+                        fullWidth
+                        sx={{
+                          mt: 1
+                        }}
+                      >
+                        <Select
+                          labelId="demo-simple-select-label"
+                          id="demo-simple-select"
+                          value={""}
+                          label="District"
+                          // onChange={}
+                        >
+                          <MenuItem value={10}>Ten</MenuItem>
+                          <MenuItem value={20}>Twenty</MenuItem>
+                          <MenuItem value={30}>Thirty</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2
+                      }}
+                    >
+                      <FormControl
+                        fullWidth
+                        sx={{
+                          mt: 1
+                        }}
+                      >
+                        <Select
+                          labelId="demo-simple-select-label"
+                          id="demo-simple-select"
+                          value={""}
+                          label="Ward"
+                          // onChange={}
+                        >
+                          <MenuItem value={10}>Ten</MenuItem>
+                          <MenuItem value={20}>Twenty</MenuItem>
+                          <MenuItem value={30}>Thirty</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2
+                      }}
+                    >
+                      <FormControl
+                        fullWidth
+                        sx={{
+                          mt: 1
+                        }}
+                      >
+                        <Select
+                          labelId="demo-simple-select-label"
+                          id="demo-simple-select"
+                          value={""}
+                          label="Province"
+                          // onChange={}
+                        >
+                          <MenuItem value={10}>Ten</MenuItem>
+                          <MenuItem value={20}>Twenty</MenuItem>
+                          <MenuItem value={30}>Thirty</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2
+                      }}
+                    >
+                      <TextField
+                        id="outlined-basic"
+                        label="note"
+                        variant="outlined"
+                        sx={{
+                          mt: 1,
+                          width: "100%"
+                        }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2
+                      }}
+                    >
+                      <FormControl>
+                        <FormControlLabel
+                          control={<Checkbox defaultChecked />}
+                          label="Đặt làm địa chỉ mặc định"
+                        />
+                      </FormControl>
+                    </Box>
+                  </Box>
+                  {/* Form input ở đây */}
+                  <Stack
+                    spacing={2}
+                    direction={"row"}
+                    justifyContent={"flex-end"}
+                    alignItems={"center"}
+                    sx={{
+                      mt: 2
+                    }}
+                  >
+                    <Button variant="outlined" onClick={handleOpenEditAddress}>
+                      Go back
+                    </Button>
+                    <Button variant="contained" onClick={handleOpenEditAddress}>
+                      Save
+                    </Button>
+                  </Stack>
+                </Box>
+              ) : (
+                <Box>
+                  {/* Danh sách địa chỉ */}
+                  <FormControl sx={{ width: "100%" }}>
+                    <RadioGroup
+                      aria-labelledby="address-radio-buttons-group"
+                      value={selectedAddressId}
+                      onChange={(e) =>
+                        setSelectedAddressId(Number(e.target.value))
+                      }
+                      name="radio-buttons-group"
+                    >
+                      {address.map((item) => (
+                        <Box key={item.id} sx={{ mb: 2 }}>
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
+                            <FormControlLabel
+                              value={item.id}
+                              control={<Radio />}
+                              label={
+                                <Stack>
+                                  <Typography fontWeight={600}>
+                                    {item.name} | {item.phone}
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    {`${item.street}, ${item.ward}, ${item.district}, ${item.province}`}
+                                  </Typography>
+                                </Stack>
+                              }
+                            />
+                            <Button
+                              variant="text"
+                              size="small"
+                              onClick={() => handleUpdateAddress(item.id)}
+                            >
+                              Cập nhật
+                            </Button>
+                          </Stack>
+                        </Box>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+
+                  {/* Nút Thêm địa chỉ (nằm bên trong Box chung) */}
+                  <Box mt={2}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleOpenEditAddress}
+                      startIcon={<AddIcon />}
+                      sx={{
+                        color: "#1976d2",
+                        borderColor: "#1976d2",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        borderRadius: "8px",
+                        padding: "6px 16px"
+                      }}
+                    >
+                      Thêm địa chỉ
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          </Fade>
+        </Modal>
+      </Box>
     </Box>
   )
 }
-
 export default OrderDetail

@@ -210,3 +210,9 @@ export const getOrderDetailAPI = async (id: number) => {
   const res = await authorizedAxiosInstance.get(`/order/${id}`)
   return res.data
 }
+
+//ADDRESS
+export const getAddressAPI = async () => {
+  const res = await authorizedAxiosInstance.get("/address/get_all")
+  return res.data
+}

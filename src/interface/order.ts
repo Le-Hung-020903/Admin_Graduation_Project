@@ -39,13 +39,15 @@ interface OrderDetail {
 interface User {
   email: string
 }
-interface Address {
+export interface IAddress {
+  id: number
   name: string
   phone: string
   province: string
   district: string
   ward: string
   street: string
+  is_default: boolean
 }
 
 export interface IOrderDetail {
@@ -59,5 +61,5 @@ export interface IOrderDetail {
   payment_method: string
   created_at: string
   orderDetails: OrderDetail[]
-  address: Address
+  address: IAddress
 }
