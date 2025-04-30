@@ -29,11 +29,17 @@ import Button from "@mui/material/Button"
 import Select from "@mui/material/Select"
 import MenuItem from "@mui/material/MenuItem"
 import Checkbox from "@mui/material/Checkbox"
-import { getAddressAPI, getOrderDetailAPI } from "../../../api"
+import {
+  createAddressAPI,
+  getAddressAPI,
+  getOrderDetailAPI
+} from "../../../api"
 import { useParams } from "react-router-dom"
 import { IAddress, IOrderDetail } from "../../../interface/order"
 import dayjs from "dayjs"
 import { formattedAmount } from "../../../utils/formatMoney"
+import InputLabel from "@mui/material/InputLabel"
+import { toast } from "react-toastify"
 
 const style = {
   position: "absolute",
@@ -46,6 +52,14 @@ const style = {
   p: 4,
   borderRadius: "10px"
 }
+type Addresses = {
+  name: string
+  slug: string
+  type: string
+  name_with_type: string
+  code: string
+}
+
 const OrderDetail = () => {
   const { id } = useParams()
   const [open, setOpen] = React.useState(false)
@@ -57,6 +71,23 @@ const OrderDetail = () => {
   const [openEditAddress, setOpenEditAddress] = useState<boolean>(false)
   const [address, setAddress] = useState<IAddress[]>([])
   const handleOpenEditAddress = () => setOpenEditAddress(!openEditAddress)
+  const [listProvince, setListProvince] = useState<Addresses[]>([])
+  const [listDistricts, setListDistricts] = useState<Addresses[]>([])
+  const [listWards, setListWards] = useState<Addresses[]>([])
+  const [location, setLocation] = useState({
+    name: "",
+    phone: "",
+    province_code: "",
+    province: "",
+    district_code: "",
+    district: "",
+    ward: "",
+    ward_code: "",
+    location: "",
+    is_default: false
+  })
+  console.log("dia chi", location)
+
   // State
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     null
@@ -74,16 +105,65 @@ const OrderDetail = () => {
     { value: "CANCELED", label: "Đã hủy" },
     { value: "CONFIRMED", label: "Đã xác nhận" }
   ]
+
+  const fetchAddress = async () => {
+    const res = await getAddressAPI()
+    setAddress(res.data)
+  }
+  const handleSubmitAddress = () => {
+    const data = {
+      phone: location.phone,
+      name: location.name,
+      province: location.province,
+      district: location.district,
+      ward: location.ward,
+      street: location.location,
+      is_default: location.is_default
+    }
+    toast.promise(createAddressAPI(data), {}).then((res) => {
+      if (res.success) {
+        fetchAddress()
+        setOpenEditAddress(!openEditAddress)
+      }
+    })
+  }
+  useEffect(() => {
+    const fetchProvince = async () => {
+      const res = await fetch(`https://province-api-vn.vercel.app/provinces`)
+      const data = await res.json()
+      setListProvince(data)
+    }
+    fetchProvince()
+  }, [])
+
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      const res = await fetch(
+        `https://province-api-vn.vercel.app/districts?parent_code=${location.province_code}`
+      )
+      const data = await res.json()
+      setListDistricts(data)
+    }
+    fetchDistricts()
+  }, [location.province_code])
+
+  useEffect(() => {
+    const fetchWards = async () => {
+      const res = await fetch(
+        `https://province-api-vn.vercel.app/wards?parent_code=${location.district_code}`
+      )
+      const data = await res.json()
+      setListWards(data)
+    }
+    fetchWards()
+  }, [location.district_code])
+
   useEffect(() => {
     const fetchOrderDetail = async () => {
       const res = await getOrderDetailAPI(Number(id))
       setOrder(res.data)
       setStatus(res.data.status)
       setSelectedAddress(res.data.address)
-    }
-    const fetchAddress = async () => {
-      const res = await getAddressAPI()
-      setAddress(res.data)
     }
     fetchOrderDetail()
     fetchAddress()
@@ -562,6 +642,9 @@ const OrderDetail = () => {
                 id="transition-modal-title"
                 variant="h6"
                 component="h2"
+                sx={{
+                  mb: 4
+                }}
               >
                 {openEditAddress ? "Add new address" : "Delivery address"}
               </Typography>
@@ -569,16 +652,19 @@ const OrderDetail = () => {
                 <Box>
                   {/* Form thêm địa chỉ */}
                   <Box>
-                    <Box
-                      sx={{
-                        mt: 3
-                      }}
-                    >
+                    <Box>
                       <Typography>Full name:</Typography>
                       <TextField
                         id="outlined-basic"
                         label="name"
+                        value={location.name}
                         variant="outlined"
+                        onChange={(e) =>
+                          setLocation((pre) => ({
+                            ...pre,
+                            name: e.target.value
+                          }))
+                        }
                         sx={{
                           mt: 1,
                           width: "100%"
@@ -594,6 +680,13 @@ const OrderDetail = () => {
                       <TextField
                         id="outlined-basic"
                         label="phone"
+                        value={location.phone}
+                        onChange={(e) =>
+                          setLocation((pre) => ({
+                            ...pre,
+                            phone: e.target.value
+                          }))
+                        }
                         variant="outlined"
                         sx={{
                           mt: 1,
@@ -613,64 +706,35 @@ const OrderDetail = () => {
                           mt: 1
                         }}
                       >
+                        <InputLabel id="province-select-label">
+                          Province
+                        </InputLabel>
                         <Select
                           labelId="demo-simple-select-label"
                           id="demo-simple-select"
-                          value={""}
-                          label="District"
-                          // onChange={}
-                        >
-                          <MenuItem value={10}>Ten</MenuItem>
-                          <MenuItem value={20}>Twenty</MenuItem>
-                          <MenuItem value={30}>Thirty</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Box>
-                    <Box
-                      sx={{
-                        mt: 2
-                      }}
-                    >
-                      <FormControl
-                        fullWidth
-                        sx={{
-                          mt: 1
-                        }}
-                      >
-                        <Select
-                          labelId="demo-simple-select-label"
-                          id="demo-simple-select"
-                          value={""}
-                          label="Ward"
-                          // onChange={}
-                        >
-                          <MenuItem value={10}>Ten</MenuItem>
-                          <MenuItem value={20}>Twenty</MenuItem>
-                          <MenuItem value={30}>Thirty</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Box>
-                    <Box
-                      sx={{
-                        mt: 2
-                      }}
-                    >
-                      <FormControl
-                        fullWidth
-                        sx={{
-                          mt: 1
-                        }}
-                      >
-                        <Select
-                          labelId="demo-simple-select-label"
-                          id="demo-simple-select"
-                          value={""}
+                          value={location.province_code || ""}
                           label="Province"
-                          // onChange={}
+                          onChange={(e) => {
+                            const selectedCode = e.target.value
+                            const selectedProvince = listProvince.find(
+                              (item) => item.code === selectedCode
+                            )
+                            if (!selectedProvince) return
+                            setLocation((prev) => ({
+                              ...prev,
+                              province: selectedProvince?.name_with_type,
+                              province_code: selectedProvince?.code
+                            }))
+                          }}
                         >
-                          <MenuItem value={10}>Ten</MenuItem>
-                          <MenuItem value={20}>Twenty</MenuItem>
-                          <MenuItem value={30}>Thirty</MenuItem>
+                          <MenuItem value="" disabled>
+                            Select Province
+                          </MenuItem>
+                          {listProvince.map((item) => (
+                            <MenuItem key={item.code} value={item.code}>
+                              {item.name_with_type}
+                            </MenuItem>
+                          ))}
                         </Select>
                       </FormControl>
                     </Box>
@@ -679,15 +743,84 @@ const OrderDetail = () => {
                         mt: 2
                       }}
                     >
-                      <TextField
-                        id="outlined-basic"
-                        label="note"
-                        variant="outlined"
+                      <FormControl
+                        fullWidth
                         sx={{
-                          mt: 1,
-                          width: "100%"
+                          mt: 1
                         }}
-                      />
+                      >
+                        <InputLabel id="province-select-label">
+                          District
+                        </InputLabel>
+                        <Select
+                          labelId="demo-simple-select-label"
+                          id="demo-simple-select"
+                          value={location.district_code || ""}
+                          label="District"
+                          onChange={(e) => {
+                            const selectedCode = e.target.value
+                            const selectedDistrict = listDistricts.find(
+                              (i) => i.code === selectedCode
+                            )
+                            if (!selectedDistrict) return
+                            setLocation((prev) => ({
+                              ...prev,
+                              district: selectedDistrict?.name_with_type,
+                              district_code: selectedDistrict?.code
+                            }))
+                          }}
+                        >
+                          <MenuItem value="" disabled>
+                            Select District
+                          </MenuItem>
+                          {listDistricts.map((item) => (
+                            <MenuItem key={item.code} value={item.code}>
+                              {item.name_with_type}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2
+                      }}
+                    >
+                      <FormControl
+                        fullWidth
+                        sx={{
+                          mt: 1
+                        }}
+                      >
+                        <InputLabel id="province-select-label">Ward</InputLabel>
+                        <Select
+                          labelId="demo-simple-select-label"
+                          id="demo-simple-select"
+                          value={location.ward_code || ""}
+                          label="Province"
+                          onChange={(e) => {
+                            const selectedCode = e.target.value
+                            const selectedWard = listWards.find(
+                              (i) => i.code === selectedCode
+                            )
+                            if (!selectedWard) return
+                            setLocation((prev) => ({
+                              ...prev,
+                              ward: selectedWard?.name_with_type,
+                              ward_code: selectedWard?.code
+                            }))
+                          }}
+                        >
+                          <MenuItem value="" disabled>
+                            Select Ward
+                          </MenuItem>
+                          {listWards.map((item) => (
+                            <MenuItem key={item.code} value={item.code}>
+                              {item.name_with_type}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
                     </Box>
                     <Box
                       sx={{
@@ -696,7 +829,17 @@ const OrderDetail = () => {
                     >
                       <FormControl>
                         <FormControlLabel
-                          control={<Checkbox defaultChecked />}
+                          control={
+                            <Checkbox
+                              checked={location.is_default}
+                              onChange={(e) =>
+                                setLocation((pre) => ({
+                                  ...pre,
+                                  is_default: e.target.checked
+                                }))
+                              }
+                            />
+                          }
                           label="Đặt làm địa chỉ mặc định"
                         />
                       </FormControl>
@@ -715,7 +858,7 @@ const OrderDetail = () => {
                     <Button variant="outlined" onClick={handleOpenEditAddress}>
                       Go back
                     </Button>
-                    <Button variant="contained" onClick={handleOpenEditAddress}>
+                    <Button variant="contained" onClick={handleSubmitAddress}>
                       Save
                     </Button>
                   </Stack>

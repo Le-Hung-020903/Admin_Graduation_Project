@@ -216,3 +216,15 @@ export const getAddressAPI = async () => {
   const res = await authorizedAxiosInstance.get("/address/get_all")
   return res.data
 }
+export const createAddressAPI = async (data: {
+  phone: string
+  name: string
+  province: string
+  district: string
+  ward: string
+  street: string
+  is_default?: string
+}) => {
+  const res = await authorizedAxiosInstance.post("/address/create", data)
+  return res.data
+}
