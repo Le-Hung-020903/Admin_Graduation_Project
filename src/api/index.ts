@@ -3,6 +3,7 @@ import { IProductFormData } from "../interface/product"
 import authorizedAxiosInstance from "../utils/axios"
 import { IAction } from "../interface/module"
 import { IUser } from "../interface/user"
+import { IAddress } from "../interface/order"
 
 // PRODUCT
 export const createProductAPI = async (
@@ -210,21 +211,22 @@ export const getOrderDetailAPI = async (id: number) => {
   const res = await authorizedAxiosInstance.get(`/order/${id}`)
   return res.data
 }
-
+export const updateOrderAPI = async (
+  id: number,
+  data: { note?: string; status?: string; address_id?: number }
+) => {
+  const res = await authorizedAxiosInstance.patch(
+    `order/update_status/${id}`,
+    data
+  )
+  return res.data
+}
 //ADDRESS
 export const getAddressAPI = async () => {
   const res = await authorizedAxiosInstance.get("/address/get_all")
   return res.data
 }
-export const createAddressAPI = async (data: {
-  phone: string
-  name: string
-  province: string
-  district: string
-  ward: string
-  street: string
-  is_default?: string
-}) => {
+export const createAddressAPI = async (data: IAddress) => {
   const res = await authorizedAxiosInstance.post("/address/create", data)
   return res.data
 }

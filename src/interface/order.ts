@@ -40,14 +40,14 @@ interface User {
   email: string
 }
 export interface IAddress {
-  id: number
+  id?: number
   name: string
   phone: string
   province: string
   district: string
   ward: string
   street: string
-  is_default: boolean
+  is_default?: boolean
 }
 
 export interface IOrderDetail {

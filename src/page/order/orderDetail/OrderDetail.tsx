@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
 import Typography from "@mui/material/Typography"
@@ -32,7 +32,8 @@ import Checkbox from "@mui/material/Checkbox"
 import {
   createAddressAPI,
   getAddressAPI,
-  getOrderDetailAPI
+  getOrderDetailAPI,
+  updateOrderAPI
 } from "../../../api"
 import { useParams } from "react-router-dom"
 import { IAddress, IOrderDetail } from "../../../interface/order"
@@ -66,7 +67,8 @@ const OrderDetail = () => {
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
   const [order, setOrder] = useState<IOrderDetail | null>(null)
-  const [status, setStatus] = useState<string>(order?.status || "")
+  const [note, setNote] = useState<string>("")
+  const [status, setStatus] = useState<string>("")
   const [selectedAddress, setSelectedAddress] = useState<IAddress | null>(null)
   const [openEditAddress, setOpenEditAddress] = useState<boolean>(false)
   const [address, setAddress] = useState<IAddress[]>([])
@@ -86,9 +88,7 @@ const OrderDetail = () => {
     location: "",
     is_default: false
   })
-  console.log("dia chi", location)
 
-  // State
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     null
   )
@@ -110,6 +110,15 @@ const OrderDetail = () => {
     const res = await getAddressAPI()
     setAddress(res.data)
   }
+
+  const fetchOrderDetail = useCallback(async () => {
+    const res = await getOrderDetailAPI(Number(id))
+    setOrder(res.data)
+    setNote(res.data.note)
+    setStatus(res.data.status)
+    setSelectedAddress(res.data.address)
+  }, [id])
+
   const handleSubmitAddress = () => {
     const data = {
       phone: location.phone,
@@ -127,6 +136,20 @@ const OrderDetail = () => {
       }
     })
   }
+
+  const handleUpdateOrder = async (id: number) => {
+    const data = {
+      note: note,
+      address_id: selectedAddressId ? selectedAddressId : 0,
+      status: status
+    }
+    toast.promise(updateOrderAPI(id, data), {}).then((res) => {
+      if (res.success) {
+        toast.success("Cập nhật giỏ hàng thành công")
+      }
+    })
+  }
+
   useEffect(() => {
     const fetchProvince = async () => {
       const res = await fetch(`https://province-api-vn.vercel.app/provinces`)
@@ -159,15 +182,10 @@ const OrderDetail = () => {
   }, [location.district_code])
 
   useEffect(() => {
-    const fetchOrderDetail = async () => {
-      const res = await getOrderDetailAPI(Number(id))
-      setOrder(res.data)
-      setStatus(res.data.status)
-      setSelectedAddress(res.data.address)
-    }
     fetchOrderDetail()
     fetchAddress()
-  }, [id])
+  }, [fetchOrderDetail])
+
   return (
     <Box>
       <Stack
@@ -555,7 +573,7 @@ const OrderDetail = () => {
               <TextField
                 id="outlined-basic"
                 label="Note"
-                value={order?.note ?? ""}
+                value={note}
                 InputLabelProps={{
                   shrink: true // <--- ép label float luôn
                 }}
@@ -576,6 +594,7 @@ const OrderDetail = () => {
                     }
                   }
                 }}
+                onChange={(e) => setNote(e.target.value)}
               />
             </Box>
             <Box
@@ -615,6 +634,7 @@ const OrderDetail = () => {
                 className="interceptor-loading"
                 variant="contained"
                 sx={{ width: "100%" }}
+                onClick={() => handleUpdateOrder(Number(id))}
               >
                 Update
               </Button>
@@ -827,6 +847,27 @@ const OrderDetail = () => {
                         mt: 2
                       }}
                     >
+                      <TextField
+                        value={location.location}
+                        id="outlined-basic"
+                        label="Street"
+                        variant="outlined"
+                        onChange={(e) =>
+                          setLocation((pre) => ({
+                            ...pre,
+                            location: e.target.value
+                          }))
+                        }
+                        sx={{
+                          width: "100%"
+                        }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2
+                      }}
+                    >
                       <FormControl>
                         <FormControlLabel
                           control={
@@ -870,9 +911,12 @@ const OrderDetail = () => {
                     <RadioGroup
                       aria-labelledby="address-radio-buttons-group"
                       value={selectedAddressId}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const id = Number(e.target.value)
+                        const selectedAddress = address.find((i) => i.id === id)
                         setSelectedAddressId(Number(e.target.value))
-                      }
+                        setSelectedAddress(selectedAddress ?? null)
+                      }}
                       name="radio-buttons-group"
                     >
                       {address.map((item) => (
@@ -893,6 +937,10 @@ const OrderDetail = () => {
                                   <Typography
                                     variant="body2"
                                     color="text.secondary"
+                                    sx={{
+                                      textTransform: "capitalize",
+                                      fontSize: "12px"
+                                    }}
                                   >
                                     {`${item.street}, ${item.ward}, ${item.district}, ${item.province}`}
                                   </Typography>
@@ -902,7 +950,12 @@ const OrderDetail = () => {
                             <Button
                               variant="text"
                               size="small"
-                              onClick={() => handleUpdateAddress(item.id)}
+                              onClick={() =>
+                                handleUpdateAddress(Number(item.id))
+                              }
+                              sx={{
+                                whiteSpace: "nowrap"
+                              }}
                             >
                               Cập nhật
                             </Button>
