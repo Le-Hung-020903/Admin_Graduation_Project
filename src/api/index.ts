@@ -114,7 +114,10 @@ export const deleteProductAPI = async (id: number) => {
   const res = await authorizedAxiosInstance.delete(`/product/${id}`)
   return res.data
 }
-
+export const getProductList = async () => {
+  const res = await authorizedAxiosInstance.get("product/get_variant")
+  return res.data
+}
 // DISCOUNT
 export const getDiscountAPI = async (page: number, limit: number) => {
   const res = await authorizedAxiosInstance.get(
@@ -134,7 +137,10 @@ export const updateDiscountAPI = async (id: number, data: IDiscount) => {
   const res = await authorizedAxiosInstance.patch(`/discount/${id}`, data)
   return res.data
 }
-
+export const getAllDiscountAPI = async () => {
+  const res = await authorizedAxiosInstance.get(`/discount/getAll`)
+  return res.data
+}
 // MODULES
 export const getModulesAPI = async () => {
   const res = await authorizedAxiosInstance.get("/modules")
