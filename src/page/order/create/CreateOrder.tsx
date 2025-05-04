@@ -13,17 +13,17 @@ import CloseIcon from "@mui/icons-material/Close"
 import IconButton from "@mui/material/IconButton"
 import { getAllDiscountAPI, getProductList } from "../../../api"
 import { formattedAmount } from "../../../utils/formatMoney"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import { useNavigate } from "react-router-dom"
+import { IAddress } from "../../../interface/order"
+import GoBack from "../../../components/GoBack"
+import Address from "../../../components/Address"
 
 const CreateOrder = () => {
-  const navigate = useNavigate()
-
-  const [age, setAge] = React.useState("")
-
-  const handleGoBack = () => {
-    navigate(-1) // Quay lại trang trước đó
-  }
+  const [open, setOpen] = React.useState(false)
+  const handleOpen = () => setOpen(true)
+  const [selectedAddress, setSelectedAddress] = useState<IAddress | null>(null)
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null
+  )
 
   const [productList, setProductList] = useState<
     {
@@ -32,6 +32,7 @@ const CreateOrder = () => {
       variants: { id: number; name: string; price: number }[]
     }[]
   >([])
+
   const [discountList, setDiscountList] = useState<
     {
       id: number
@@ -40,13 +41,15 @@ const CreateOrder = () => {
       percent: number
     }[]
   >([])
+  console.log("o noi tao", selectedAddressId)
+
   const [order, setOrder] = useState({
     discount_id: 0,
-    address_id: 0,
+    address_id: selectedAddressId,
     note: "",
     payment_method: "",
     final_price: "",
-    order_status: "",
+    status: "",
     payment_status: ""
   })
 
@@ -114,20 +117,7 @@ const CreateOrder = () => {
 
   return (
     <Box>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        variant="outlined"
-        onClick={handleGoBack}
-        sx={{
-          mb: 3, // margin bottom
-          textTransform: "none", // không viết hoa chữ
-          "&:hover": {
-            backgroundColor: "#f5f5f5" // màu nền khi hover
-          }
-        }}
-      >
-        Quay lại
-      </Button>
+      <GoBack />
       <Typography
         variant="h4"
         sx={{
@@ -171,7 +161,7 @@ const CreateOrder = () => {
             <Select
               labelId="demo-simple-select-label"
               id="demo-simple-select"
-              value={order.payment_status || ""}
+              value={order.status || ""}
               label="Status"
               onChange={handleChange}
             >
@@ -241,6 +231,42 @@ const CreateOrder = () => {
             </Select>
           </FormControl>
         </Box>
+      </Box>
+      <Box
+        sx={{
+          width: "25%",
+          mt: 4
+        }}
+      >
+        <Stack
+          justifyContent={"space-between"}
+          alignItems={"center"}
+          direction={"row"}
+        >
+          <Typography>Address</Typography>
+          <Button variant="outlined" onClick={handleOpen}>
+            Add
+          </Button>
+        </Stack>
+        <TextField
+          id="filled-read-only-input"
+          label=""
+          value={
+            selectedAddress
+              ? `${selectedAddress?.street}, ${selectedAddress?.ward}, ${selectedAddress?.district}, ${selectedAddress?.province}`
+              : "Chưa chọn địa chỉ"
+          }
+          variant="filled"
+          slotProps={{
+            input: {
+              readOnly: true
+            }
+          }}
+          sx={{
+            width: "100%",
+            mt: 1
+          }}
+        />
       </Box>
       <Box
         sx={{
@@ -374,6 +400,13 @@ const CreateOrder = () => {
           })}
         </Box>
       </Box>
+      <Address
+        open={open}
+        setOpen={setOpen}
+        setSelectedAddress={setSelectedAddress}
+        selectedAddressId={selectedAddressId}
+        setSelectedAddressId={setSelectedAddressId}
+      />
     </Box>
   )
 }
