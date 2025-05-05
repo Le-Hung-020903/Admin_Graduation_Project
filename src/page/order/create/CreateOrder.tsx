@@ -11,15 +11,37 @@ import TextField from "@mui/material/TextField"
 import Stack from "@mui/material/Stack"
 import CloseIcon from "@mui/icons-material/Close"
 import IconButton from "@mui/material/IconButton"
-import { getAllDiscountAPI, getProductList } from "../../../api"
+import {
+  createOrderAPI,
+  getAllDiscountAPI,
+  getProductList,
+  getUserByNameAPI
+} from "../../../api"
 import { formattedAmount } from "../../../utils/formatMoney"
-import { IAddress } from "../../../interface/order"
+import { IAddress, IOrderPayload } from "../../../interface/order"
 import GoBack from "../../../components/GoBack"
 import Address from "../../../components/Address"
+import { toast } from "react-toastify"
 
 const CreateOrder = () => {
+  const defaultOrder = {
+    user_id: 0,
+    discount_id: 0,
+    address_id: null as number | null,
+    note: "",
+    payment_method: "",
+    final_price: 0,
+    status: "",
+    payment_status: ""
+  }
+
+  const defaultInputs = [
+    { product_id: 0, variant_id: 0, quantity: 1, price: 0 }
+  ]
+
   const [open, setOpen] = React.useState(false)
   const handleOpen = () => setOpen(true)
+  const [userList, setUserList] = useState<{ id: number; name: string }[]>([])
   const [selectedAddress, setSelectedAddress] = useState<IAddress | null>(null)
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     null
@@ -41,21 +63,10 @@ const CreateOrder = () => {
       percent: number
     }[]
   >([])
-  console.log("o noi tao", selectedAddressId)
 
-  const [order, setOrder] = useState({
-    discount_id: 0,
-    address_id: selectedAddressId,
-    note: "",
-    payment_method: "",
-    final_price: "",
-    status: "",
-    payment_status: ""
-  })
+  const [order, setOrder] = useState(defaultOrder)
 
-  const [inputs, setInputs] = useState([
-    { product_id: 0, variant_id: 0, quantity: 1, price: 0 }
-  ])
+  const [inputs, setInputs] = useState(defaultInputs)
 
   const handleAddOrderItem = () => {
     setInputs([
@@ -95,12 +106,66 @@ const CreateOrder = () => {
       setInputs(newInputs)
     }
 
-  const handleChange = () => {}
+  const handleChange = (
+    e:
+      | SelectChangeEvent
+      | React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    const { name, value } = e.target
+    setOrder((pre) => ({
+      ...pre,
+      [name]:
+        name === "discount_id" || name === "user_id" ? Number(value) : value
+    }))
+  }
 
   const handleDelete = (index: number) => {
     const newInputs = inputs.filter((_, i) => i !== index)
     setInputs(newInputs)
   }
+
+  const handleCreateOrder = () => {
+    const data: IOrderPayload = {
+      ...order,
+      order_details: inputs
+    }
+    console.log("data", data)
+
+    toast.promise(createOrderAPI(data), {}).then((res) => {
+      if (res.success) {
+        toast.success("Thêm đơn hàng thành công")
+        // Reset form
+        setOrder(defaultOrder)
+        setInputs(defaultInputs)
+      }
+    })
+  }
+
+  useEffect(() => {
+    const discount = discountList.find((d) => d.id === order.discount_id)
+    const percent = discount?.percent || 0
+
+    const total = inputs.reduce((acc, item) => {
+      return acc + item.price * item.quantity
+    }, 0)
+
+    // (1 - 20 / 100) -> (1 - 0.2) -> 0.8
+    const finalPrice = total * (1 - percent / 100)
+
+    setOrder((prev) => ({
+      ...prev,
+      final_price: Number(finalPrice.toFixed(2))
+    }))
+  }, [inputs, order.discount_id, discountList])
+
+  useEffect(() => {
+    if (selectedAddressId !== null) {
+      setOrder((pre) => ({
+        ...pre,
+        address_id: selectedAddressId
+      }))
+    }
+  }, [selectedAddressId])
 
   useEffect(() => {
     const fetchProductList = async () => {
@@ -111,8 +176,13 @@ const CreateOrder = () => {
       const res = await getAllDiscountAPI()
       setDiscountList(res.data)
     }
+    const fetchUser = async () => {
+      const res = await getUserByNameAPI()
+      setUserList(res.data)
+    }
     fetchProductList()
     fetchDiscountCode()
+    fetchUser()
   }, [])
 
   return (
@@ -126,11 +196,27 @@ const CreateOrder = () => {
       >
         Create Order
       </Typography>
-      <Box
-        sx={{
-          width: "25%"
-        }}
-      >
+      <Box sx={{ mt: 3, width: "25%" }}>
+        <Typography>User</Typography>
+        <Box sx={{ minWidth: 120, mt: 1 }}>
+          <FormControl fullWidth>
+            <InputLabel id="demo-simple-select-label">User</InputLabel>
+            <Select
+              labelId="demo-simple-select-label"
+              id="demo-simple-select"
+              name="user_id"
+              label="User"
+              value={String(order.user_id || 0)}
+              onChange={handleChange}
+            >
+              {userList.map((item) => {
+                return <MenuItem value={item.id}>{item.name}</MenuItem>
+              })}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+      <Box sx={{ mt: 3, width: "25%" }}>
         <Typography>Payment method</Typography>
         <Box sx={{ minWidth: 120, mt: 1 }}>
           <FormControl fullWidth>
@@ -138,12 +224,13 @@ const CreateOrder = () => {
             <Select
               labelId="demo-simple-select-label"
               id="demo-simple-select"
+              name="payment_method"
               label="Payment"
               value={order.payment_method || ""}
               onChange={handleChange}
             >
-              <MenuItem value={"COD"}>COD</MenuItem>
-              <MenuItem value={"QR_PAYMENT"}>QR_PAYMENT</MenuItem>
+              <MenuItem value="COD">COD</MenuItem>
+              <MenuItem value="QR_PAYMENT">QR_PAYMENT</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -162,17 +249,18 @@ const CreateOrder = () => {
               labelId="demo-simple-select-label"
               id="demo-simple-select"
               value={order.status || ""}
+              name="status"
               label="Status"
               onChange={handleChange}
             >
-              <MenuItem value={"PENDING"}>PENDING</MenuItem>
-              <MenuItem value={"WAITING_CONFIRMATION"}>
+              <MenuItem value="PENDING">PENDING</MenuItem>
+              <MenuItem value="WAITING_CONFIRMATION">
                 WAITING_CONFIRMATION
               </MenuItem>
-              <MenuItem value={"SHIPPED"}>SHIPPED</MenuItem>
-              <MenuItem value={"DELIVERED"}>DELIVERED</MenuItem>
-              <MenuItem value={"CANCELED"}>CANCELED</MenuItem>
-              <MenuItem value={"CONFIRMED"}>CONFIRMED</MenuItem>
+              <MenuItem value="SHIPPED">SHIPPED</MenuItem>
+              <MenuItem value="DELIVERED">DELIVERED</MenuItem>
+              <MenuItem value="CANCELED">CANCELED</MenuItem>
+              <MenuItem value="CONFIRMED">CONFIRMED</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -190,7 +278,8 @@ const CreateOrder = () => {
             <Select
               labelId="demo-simple-select-label"
               id="demo-simple-select"
-              value={order.discount_id || 0}
+              value={String(order.discount_id || 0)}
+              name="discount_id"
               label="Discount"
               onChange={handleChange}
             >
@@ -221,6 +310,7 @@ const CreateOrder = () => {
               labelId="demo-simple-select-label"
               id="demo-simple-select"
               value={order.payment_status}
+              name="payment_status"
               label="Payment status"
               onChange={handleChange}
             >
@@ -250,7 +340,7 @@ const CreateOrder = () => {
         </Stack>
         <TextField
           id="filled-read-only-input"
-          label=""
+          name="address_id"
           value={
             selectedAddress
               ? `${selectedAddress?.street}, ${selectedAddress?.ward}, ${selectedAddress?.district}, ${selectedAddress?.province}`
@@ -278,6 +368,8 @@ const CreateOrder = () => {
         <TextField
           id="outlined-basic"
           label="Note"
+          name="note"
+          onChange={handleChange}
           variant="outlined"
           sx={{
             mt: 1,
@@ -399,6 +491,9 @@ const CreateOrder = () => {
             )
           })}
         </Box>
+        <Button variant="contained" sx={{ mt: 7 }} onClick={handleCreateOrder}>
+          Create order
+        </Button>
       </Box>
       <Address
         open={open}

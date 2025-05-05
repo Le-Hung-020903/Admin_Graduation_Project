@@ -63,3 +63,20 @@ export interface IOrderDetail {
   orderDetails: OrderDetail[]
   address: IAddress
 }
+
+export interface IOrderPayload {
+  user_id: number
+  discount_id?: number
+  address_id: number | null
+  note: string
+  payment_method: string
+  final_price: number
+  payment_status: string
+  status: string
+  order_details: {
+    product_id: number
+    variant_id: number
+    quantity: number
+    price: number
+  }[]
+}

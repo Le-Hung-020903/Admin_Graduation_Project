@@ -39,7 +39,6 @@ const OrderDetail = () => {
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     null
   )
-  console.log("o noi chi tiet", selectedAddressId)
 
   const orderStatus = [
     { value: "PENDING", label: "Đang chờ" },

@@ -13,32 +13,52 @@ import Chip from "@mui/material/Chip"
 import Stack from "@mui/material/Stack"
 import { getOrderAPI } from "../../api"
 import { IOrder } from "../../interface/order"
-import { Typography } from "@mui/material"
-import { Link } from "react-router-dom"
-
-const paginationModel = { page: 0, pageSize: 5 }
+import Typography from "@mui/material/Typography"
+import { Link, useNavigate } from "react-router-dom"
+import { formattedAmount } from "../../utils/formatMoney"
 
 export default function Order() {
-  const [age, setAge] = React.useState("")
+  const navigate = useNavigate()
 
-  const handleChangeh = (event: SelectChangeEvent) => {
-    setAge(event.target.value as string)
+  const [pagination, setPagination] = React.useState({
+    total: 0,
+    page: 1,
+    limit: 3
+  })
+
+  const defaultFilter = {
+    status: "",
+    sort: "DESC"
+  }
+  const [filter, setFilter] = React.useState(defaultFilter)
+
+  const handleFilter = () => {
+    const params = new URLSearchParams()
+    if (filter.status) params.set("_status", filter.status)
+    if (filter.sort) params.set("_sort", filter.sort)
+    navigate(`?${params.toString()}`)
+
+    fetchOrderApi(filter.status.trim(), filter.sort.trim())
+  }
+
+  const handleClearFilter = () => {
+    setFilter(defaultFilter)
+    navigate("?")
+    fetchOrderApi("", "DESC")
   }
 
   const [rows, setRow] = React.useState<IOrder[]>([])
-  const [formData, setFormData] = React.useState({
-    id: "",
-    Recipient_name: "",
-    Total_price: "",
-    Slug: "",
-    Created_at: ""
-  })
 
   // Xử lý thay đổi input
-  const handleChange = (e) => {
+  const handleChange = (
+    e:
+      | SelectChangeEvent
+      | React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setFilter((prev) => ({ ...prev, [name]: value }))
   }
+
   const columns: GridColDef[] = [
     {
       field: "id",
@@ -118,7 +138,6 @@ export default function Order() {
           case "WAITING_CONFIRMATION":
             color = "default"
             break
-          // bạn có thể thêm các case khác nếu cần
           default:
             color = "info"
             break
@@ -152,23 +171,40 @@ export default function Order() {
     }
   ]
 
-  React.useEffect(() => {
-    const fetchOrderApi = async () => {
-      const res = await getOrderAPI(1, 5, "DESC", "")
+  const fetchOrderApi = React.useCallback(
+    async (status: string = "", sort: string = "DESC") => {
+      const res = await getOrderAPI(
+        pagination.page,
+        pagination.limit,
+        sort,
+        status
+      )
+      const { data, pagination: paginationData } = res
+
       setRow(
-        res.data.map((item: IOrder) => ({
+        data.map((item: IOrder) => ({
           id: item.id,
           Recipient_name: item.name,
           Status: item.status,
-          Total_price: item.final_price,
+          Total_price: formattedAmount(Number(item.final_price)),
           Product_item: item.product,
           more: item.more,
           Payment_method: item.payment_method
         }))
       )
-    }
-    fetchOrderApi()
-  }, [])
+
+      setPagination((pre) => ({
+        ...pre,
+        total: paginationData?.total || 0
+      }))
+    },
+    [pagination.page, pagination.limit]
+  )
+
+  React.useEffect(() => {
+    fetchOrderApi("", "DESC")
+  }, [fetchOrderApi])
+
   return (
     <Box>
       <Box>
@@ -190,13 +226,18 @@ export default function Order() {
             <Select
               labelId="demo-simple-select-label"
               id="demo-simple-select"
-              value={age}
+              name={"status"}
+              value={filter.status || ""}
               label="trạng thái"
-              onChange={handleChangeh}
+              onChange={handleChange}
             >
-              <MenuItem value={10}>Ten</MenuItem>
-              <MenuItem value={20}>Twenty</MenuItem>
-              <MenuItem value={30}>Thirty</MenuItem>
+              <MenuItem value={"All"}>Tất cả</MenuItem>
+              <MenuItem value={"PENDING"}>Chờ xử lý</MenuItem>
+              <MenuItem value={"WAITING_CONFIRMATION"}>Chờ xác nhận</MenuItem>
+              <MenuItem value={"SHIPPED"}>Đang giao hàng</MenuItem>
+              <MenuItem value={"DELIVERED"}>Đã giao</MenuItem>
+              <MenuItem value={"CANCELED"}>Đã hủy</MenuItem>
+              <MenuItem value={"CONFIRMED"}>Đã xác nhận</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -206,30 +247,51 @@ export default function Order() {
             <Select
               labelId="demo-simple-select-label"
               id="demo-simple-select"
-              value={age}
+              name={"sort"}
+              value={filter.sort || ""}
               label="Thời gian"
-              onChange={handleChangeh}
+              onChange={handleChange}
             >
-              <MenuItem value={10}>Mới nhất</MenuItem>
-              <MenuItem value={20}>Cũ nhất</MenuItem>
+              <MenuItem value={"DESC"}>Mới nhất</MenuItem>
+              <MenuItem value={"ASC"}>Cũ nhất</MenuItem>
             </Select>
           </FormControl>
         </Box>
         <Box>
-          <Button variant="contained" color="primary">
-            Lọc đơn hàng
+          <Button variant="contained" color="primary" onClick={handleFilter}>
+            {rows.length === 0 ? "Đang lọc..." : "Lọc đơn hàng"}
           </Button>
         </Box>
+        {filter.status && (
+          <Box>
+            <Chip
+              label="Xoá bộ lọc"
+              variant="outlined"
+              onClick={handleClearFilter}
+            />
+          </Box>
+        )}
       </Stack>
       <Paper sx={{ height: 650, width: "100%" }} elevation={6}>
         <DataGrid
           rows={rows}
           columns={columns}
-          initialState={{ pagination: { paginationModel } }}
-          pageSizeOptions={[5, 10]}
           checkboxSelection
           sx={{ border: 0, textAlign: "center" }}
           rowHeight={70}
+          paginationMode="server"
+          rowCount={pagination.total}
+          paginationModel={{
+            page: pagination.page - 1,
+            pageSize: pagination.limit
+          }}
+          onPaginationModelChange={(model) => {
+            setPagination((prev) => ({
+              ...prev,
+              page: model.page + 1,
+              limit: model.pageSize
+            }))
+          }}
         />
       </Paper>
     </Box>

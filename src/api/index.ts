@@ -3,7 +3,7 @@ import { IProductFormData } from "../interface/product"
 import authorizedAxiosInstance from "../utils/axios"
 import { IAction } from "../interface/module"
 import { IUser } from "../interface/user"
-import { IAddress } from "../interface/order"
+import { IAddress, IOrderPayload } from "../interface/order"
 
 // PRODUCT
 export const createProductAPI = async (
@@ -118,6 +118,7 @@ export const getProductList = async () => {
   const res = await authorizedAxiosInstance.get("product/get_variant")
   return res.data
 }
+
 // DISCOUNT
 export const getDiscountAPI = async (page: number, limit: number) => {
   const res = await authorizedAxiosInstance.get(
@@ -197,6 +198,10 @@ export const updateUserAPI = async (data: IUser, id: number) => {
   const res = await authorizedAxiosInstance.patch(`/user/${id}`, data)
   return res.data
 }
+export const getUserByNameAPI = async () => {
+  const res = await authorizedAxiosInstance.get("user/get_name")
+  return res.data
+}
 
 // ORDER
 export const getOrderAPI = async (
@@ -214,7 +219,9 @@ export const getOrderAPI = async (
   return res.data
 }
 export const getOrderDetailAPI = async (id: number) => {
-  const res = await authorizedAxiosInstance.get(`/order/${id}`)
+  const res = await authorizedAxiosInstance.get(
+    `/order/get_order_by_admin/${id}`
+  )
   return res.data
 }
 export const updateOrderAPI = async (
@@ -222,11 +229,19 @@ export const updateOrderAPI = async (
   data: { note?: string; status?: string; address_id?: number }
 ) => {
   const res = await authorizedAxiosInstance.patch(
-    `order/update_status/${id}`,
+    `/order/update_status/${id}`,
     data
   )
   return res.data
 }
+export const createOrderAPI = async (data: IOrderPayload) => {
+  const res = await authorizedAxiosInstance.post(
+    "order/create_order_by_admin",
+    data
+  )
+  return res.data
+}
+
 //ADDRESS
 export const getAddressAPI = async () => {
   const res = await authorizedAxiosInstance.get("/address/get_all")
