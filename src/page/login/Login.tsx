@@ -21,6 +21,9 @@ import {
 import authorizedAxiosInstance from "../../utils/axios"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
+import { useDispatch } from "react-redux"
+import { AppDispatch } from "../../redux/store"
+import { getPermissionAPI } from "../../redux/middleware/permission.middleware"
 
 type Inputs = {
   email: string
@@ -29,7 +32,7 @@ type Inputs = {
 
 export default function Login() {
   const navigate = useNavigate()
-
+  const dispatch = useDispatch<AppDispatch>()
   const {
     register,
     handleSubmit,
@@ -39,6 +42,11 @@ export default function Login() {
     const res = await authorizedAxiosInstance.post("/auth/login", data)
     const result = res.data
     toast.success(result.message)
+
+    if (result.success) {
+      await dispatch(getPermissionAPI())
+    }
+
     navigate("/")
   }
 

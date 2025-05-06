@@ -20,6 +20,8 @@ import EditRole from "./page/role/EditRole/EditRole"
 import Modules from "./page/modules/Modules"
 import User from "./page/user/User"
 import CreateOrder from "./page/order/create/CreateOrder"
+import { useSelector } from "react-redux"
+import { selectPermission } from "./redux/slice/permission.slice"
 
 const router = createBrowserRouter([
   {
@@ -99,6 +101,8 @@ const router = createBrowserRouter([
 ])
 
 const App = () => {
+  const permissions = useSelector(selectPermission)
+  console.log("🚀 ~ App ~ permissions:", permissions)
   return <RouterProvider router={router} />
 }
 
