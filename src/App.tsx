@@ -20,8 +20,11 @@ import EditRole from "./page/role/EditRole/EditRole"
 import Modules from "./page/modules/Modules"
 import User from "./page/user/User"
 import CreateOrder from "./page/order/create/CreateOrder"
-import { useSelector } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { selectPermission } from "./redux/slice/permission.slice"
+import { useEffect } from "react"
+import { AppDispatch } from "./redux/store"
+import { getPermissionAPI } from "./redux/middleware/permission.middleware"
 
 const router = createBrowserRouter([
   {
@@ -101,8 +104,13 @@ const router = createBrowserRouter([
 ])
 
 const App = () => {
+  const dispatch = useDispatch<AppDispatch>()
   const permissions = useSelector(selectPermission)
-  console.log("🚀 ~ App ~ permissions:", permissions)
+
+  useEffect(() => {
+    if (permissions.length === 0) dispatch(getPermissionAPI())
+  }, [dispatch, permissions])
+
   return <RouterProvider router={router} />
 }
 

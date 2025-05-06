@@ -142,6 +142,7 @@ export const getAllDiscountAPI = async () => {
   const res = await authorizedAxiosInstance.get(`/discount/getAll`)
   return res.data
 }
+
 // MODULES
 export const getModulesAPI = async () => {
   const res = await authorizedAxiosInstance.get("/modules")

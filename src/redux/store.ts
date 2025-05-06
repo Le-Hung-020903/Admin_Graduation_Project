@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit"
 import permissionReducer from "../redux/slice/permission.slice"
+import userReducer from "../redux/slice/user.middleware"
 
 export const store = configureStore({
   reducer: {
-    permission: permissionReducer
+    permission: permissionReducer,
+    user: userReducer
   }
 })
 
