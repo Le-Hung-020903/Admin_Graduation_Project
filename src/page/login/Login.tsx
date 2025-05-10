@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { AppDispatch } from "../../redux/store"
 import { getPermissionAPI } from "../../redux/middleware/permission.middleware"
+import { setUser } from "../../redux/slice/user.middleware"
 
 type Inputs = {
   email: string
@@ -44,10 +45,13 @@ export default function Login() {
     toast.success(result.message)
 
     if (result.success) {
-      await dispatch(getPermissionAPI())
-    }
+      dispatch(setUser(result.data))
+      localStorage.setItem("user", JSON.stringify(result.data))
 
-    navigate("/")
+      dispatch(getPermissionAPI())
+
+      navigate("/", { replace: true })
+    }
   }
 
   return (

@@ -26,10 +26,14 @@ import Menu from "@mui/material/Menu"
 import AccountCircleIcon from "@mui/icons-material/AccountCircle"
 import PersonIcon from "@mui/icons-material/Person"
 import ExitToAppIcon from "@mui/icons-material/ExitToApp"
+import { useDispatch, useSelector } from "react-redux"
+import { selectPermission } from "../redux/slice/permission.slice"
+import { AppDispatch } from "../redux/store"
+import { logoutUser } from "../redux/slice/user.middleware"
+import { hasPermissionToModule } from "../utils/checkPermission"
 
-const Layout = () => {
-  // Thêm keyframes cho hiệu ứng
-  const ripple = keyframes`
+// Thêm keyframes cho hiệu ứng
+const ripple = keyframes`
   0% {
     transform: scale(0.5);
     opacity: 1;
@@ -39,6 +43,9 @@ const Layout = () => {
     opacity: 0;
   }
 `
+const Layout = () => {
+  const dispatch = useDispatch<AppDispatch>()
+  const permissions = useSelector(selectPermission)
   const [expanded, setExpanded] = useState<boolean>(true)
   const navigate = useNavigate()
   const location = useLocation()
@@ -49,12 +56,24 @@ const Layout = () => {
 
   const menuItems = [
     { icon: <HomeIcon />, label: "Trang chủ", path: "/" },
-    { icon: <CategoryIcon />, label: "Danh mục", path: "/category" },
-    { icon: <ShoppingCartIcon />, label: "Sản phẩm", path: "/product" },
-    { icon: <InventoryIcon />, label: "Đơn hàng", path: "/order" },
-    { icon: <DiscountIcon />, label: "Mã giảm giá", path: "/discount" },
-    { icon: <ControlCameraIcon />, label: "Vai trò", path: "/roles" },
-    { icon: <GroupIcon />, label: "User", path: "/users" },
+    hasPermissionToModule(permissions, "categories")
+      ? { icon: <CategoryIcon />, label: "Danh mục", path: "/category" }
+      : null,
+    hasPermissionToModule(permissions, "products")
+      ? { icon: <ShoppingCartIcon />, label: "Sản phẩm", path: "/product" }
+      : null,
+    hasPermissionToModule(permissions, "orders")
+      ? { icon: <InventoryIcon />, label: "Đơn hàng", path: "/order" }
+      : null,
+    hasPermissionToModule(permissions, "discounts")
+      ? { icon: <DiscountIcon />, label: "Mã giảm giá", path: "/discount" }
+      : null,
+    hasPermissionToModule(permissions, "roles")
+      ? { icon: <ControlCameraIcon />, label: "Vai trò", path: "/roles" }
+      : null,
+    hasPermissionToModule(permissions, "users")
+      ? { icon: <GroupIcon />, label: "User", path: "/users" }
+      : null,
     { icon: <ViewModuleIcon />, label: "Module", path: "/modules" }
   ]
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -74,12 +93,17 @@ const Layout = () => {
   }
 
   const handleSignOut = () => {
-    // Xử lý đăng xuất
+    // Đóng menu (nếu có)
     handleMenuClose()
-    // Chuyển hướng ngay lập tức
-    navigate("/login", {
-      replace: true
-    })
+
+    // Gửi action logout cho Redux để cập nhật trạng thái
+    dispatch(logoutUser())
+
+    // Xóa thông tin người dùng khỏi localStorage
+    localStorage.removeItem("user")
+
+    // Chuyển hướng về trang login ngay lập tức
+    navigate("/login", { replace: true })
   }
 
   return (
@@ -122,41 +146,43 @@ const Layout = () => {
             width: "100%"
           }}
         >
-          {menuItems.map((item) => (
-            <Box
-              key={item.path}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: expanded ? "flex-start" : "center",
-                width: "100%",
-                padding: "10px",
-                borderRadius: "5px",
-                background: isActive(item.path)
-                  ? activeBgColor
-                  : defaultBgColor,
-                "&:hover": { background: activeBgColor },
-                cursor: "pointer"
-              }}
-              onClick={() => navigate(item.path)}
-            >
-              <Tooltip title={!expanded ? item.label : ""} placement="right">
-                <Box
-                  sx={{
-                    minWidth: "40px",
-                    display: "flex",
-                    justifyContent: "center",
-                    color: isActive(item.path) ? "#0B0E14" : "#9A9A9B"
-                  }}
-                >
-                  {item.icon}
-                </Box>
-              </Tooltip>
-              {expanded && (
-                <Typography color="#0B0E14">{item.label}</Typography>
-              )}
-            </Box>
-          ))}
+          {menuItems
+            .filter((i) => i !== null && i !== undefined)
+            .map((item) => (
+              <Box
+                key={item.path}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: expanded ? "flex-start" : "center",
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  background: isActive(item.path)
+                    ? activeBgColor
+                    : defaultBgColor,
+                  "&:hover": { background: activeBgColor },
+                  cursor: "pointer"
+                }}
+                onClick={() => navigate(item.path)}
+              >
+                <Tooltip title={!expanded ? item.label : ""} placement="right">
+                  <Box
+                    sx={{
+                      minWidth: "40px",
+                      display: "flex",
+                      justifyContent: "center",
+                      color: isActive(item.path) ? "#0B0E14" : "#9A9A9B"
+                    }}
+                  >
+                    {item.icon}
+                  </Box>
+                </Tooltip>
+                {expanded && (
+                  <Typography color="#0B0E14">{item.label}</Typography>
+                )}
+              </Box>
+            ))}
         </Box>
       </Box>
 
