@@ -183,6 +183,12 @@ export const deleteRoleAPI = async (id: number) => {
   const res = await authorizedAxiosInstance.delete(`/role/${id}`)
   return res.data
 }
+export const createRoleAPI = async (role_ids: number[], id: number) => {
+  const res = await authorizedAxiosInstance.post(`user/roles/${id}`, {
+    role_ids
+  })
+  return res.data
+}
 
 //USER
 export const getUserAPI = async (page: number, limit: number) => {

@@ -21,6 +21,7 @@ import Checkbox from "@mui/material/Checkbox"
 import OutlinedInput from "@mui/material/OutlinedInput"
 
 import {
+  createRoleAPI,
   createUserAPI,
   deleteDiscountAPI,
   getRoleAPI,
@@ -39,8 +40,11 @@ import {
 } from "../../utils/validators"
 import Alert from "@mui/material/Alert"
 import { toast } from "react-toastify"
-import { IUser } from "../../interface/user"
+import { IROLE, IUser } from "../../interface/user"
 import { IRole } from "../../interface/role"
+import { getPermissionAPI } from "../../redux/middleware/permission.middleware"
+import { useDispatch } from "react-redux"
+import { AppDispatch } from "../../redux/store"
 
 const initialFormData: IUser = {
   name: "",
@@ -51,6 +55,7 @@ const initialFormData: IUser = {
 }
 
 export default function User() {
+  const dispatch = useDispatch<AppDispatch>()
   const [rows, setRow] = React.useState<IUser[]>([])
   const [open, setOpen] = React.useState<boolean>(false)
   const [roles, setRoles] = React.useState<IRole[]>([])
@@ -123,23 +128,6 @@ export default function User() {
 
   const handleSubmitForm = handleSubmit(onSubmit)
 
-  const ITEM_HEIGHT = 48
-  const ITEM_PADDING_TOP = 8
-  const MenuProps = {
-    PaperProps: {
-      style: {
-        maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-        width: 250
-      }
-    }
-  }
-
-  const handleChange = (event: SelectChangeEvent<number[]>) => {
-    const { value } = event.target
-    console.log("id", value)
-    setId((pre) => [...pre, value])
-  }
-
   const columns: GridColDef[] = [
     {
       field: "id",
@@ -197,9 +185,21 @@ export default function User() {
       headerAlign: "center",
       renderCell: (params) => {
         const selectedRoles = Array.isArray(params.row.roles)
-          ? params.row.roles.map((r: IRole) => r.name) // Lấy tên vai trò thay vì object
+          ? params.row.roles.map((r: IRole) => r.id)
           : []
 
+        const handleChange = (event: SelectChangeEvent<number[]>) => {
+          const selectedValues = event.target.value as number[]
+          setId(selectedValues)
+          const userId = params.row.id
+          const role_ids = selectedValues
+          toast.promise(createRoleAPI(role_ids, userId), {}).then((res) => {
+            if (res.success) {
+              toast.success(`Thêm vai trò cho ${params.row.name} thành công`)
+              dispatch(getPermissionAPI())
+            }
+          })
+        }
         return (
           <FormControl sx={{ m: 1, width: 200, height: 80 }}>
             <InputLabel>Vai trò</InputLabel>
@@ -208,11 +208,17 @@ export default function User() {
               value={selectedRoles}
               onChange={handleChange}
               input={<OutlinedInput label="Vai trò" />}
-              renderValue={(selected) => selected.join(", ")}
+              renderValue={
+                (selected) =>
+                  roles
+                    .filter((role) => selected.includes(role.id))
+                    .map((role) => role.name)
+                    .join(", ") // hiển thị name
+              }
             >
               {roles.map((role) => (
                 <MenuItem key={role.id} value={role.id}>
-                  <Checkbox checked={selectedRoles.includes(role.name)} />
+                  <Checkbox checked={id.includes(role.id)} />
                   <ListItemText primary={role.name} />
                 </MenuItem>
               ))}
@@ -292,6 +298,7 @@ export default function User() {
         email: item.email,
         status: item.status,
         phone: item.phone,
+        roles: item.roles,
         created_at: dayjs(item.created_at).format("DD/MM/YYYY HH:mm:ss")
       }))
     )
@@ -299,6 +306,7 @@ export default function User() {
       ...pre,
       total: pagination?.total || 0
     }))
+    setId(data.flatMap((item: IUser) => item.roles.map((r) => r.id)))
   }
 
   const fetchRole = async () => {

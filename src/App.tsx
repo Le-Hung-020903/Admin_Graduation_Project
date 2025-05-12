@@ -50,8 +50,8 @@ const App = () => {
   }, [dispatch, user])
 
   useEffect(() => {
-    if (permissions.length === 0) dispatch(getPermissionAPI())
-  }, [dispatch, permissions])
+    if (user && permissions.length === 0) dispatch(getPermissionAPI())
+  }, [dispatch, user, permissions])
 
   if (loading) return null // đợi đến khi user được xác định
   const router = createBrowserRouter([
