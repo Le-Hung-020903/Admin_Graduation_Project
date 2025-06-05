@@ -11,12 +11,15 @@ import { deleteRoleAPI, getRoleAPI } from "../../api"
 import { IRole } from "../../interface/role"
 import dayjs from "dayjs"
 import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
+import { selectPermission } from "../../redux/slice/permission.slice"
+import { hasPermission } from "../../utils/hasPermission"
 
 const paginationModel = { page: 0, pageSize: 5 }
 
 export default function Role() {
   const [rows, setRow] = React.useState([])
-
+  const permissions = useSelector(selectPermission)
   const handleDelete = (id: number, name: string) => {
     console.log("id", id)
     console.log("name", name)
@@ -65,17 +68,21 @@ export default function Role() {
       flex: 1,
       renderCell: (params) => (
         <Box>
-          <Link to={`/roles/edit/${params.row.id}`}>
-            <IconButton color="primary">
-              <EditIcon />
+          {hasPermission(permissions, "roles.update") && (
+            <Link to={`/roles/edit/${params.row.id}`}>
+              <IconButton color="primary">
+                <EditIcon />
+              </IconButton>
+            </Link>
+          )}
+          {hasPermission(permissions, "roles.delete") && (
+            <IconButton
+              color="error"
+              onClick={() => handleDelete(params.row.id, params.row.role)}
+            >
+              <DeleteIcon />
             </IconButton>
-          </Link>
-          <IconButton
-            color="error"
-            onClick={() => handleDelete(params.row.id, params.row.role)}
-          >
-            <DeleteIcon />
-          </IconButton>
+          )}
         </Box>
       )
     }
@@ -95,13 +102,15 @@ export default function Role() {
   }, [])
   return (
     <Box>
-      <Box>
-        <Link to="/roles/create">
-          <Button variant="contained" color="primary" sx={{ mb: 1 }}>
-            Thêm mới
-          </Button>
-        </Link>
-      </Box>
+      {hasPermission(permissions, "roles.insert") && (
+        <Box>
+          <Link to="/roles/create">
+            <Button variant="contained" color="primary" sx={{ mb: 1 }}>
+              Thêm mới
+            </Button>
+          </Link>
+        </Box>
+      )}
       <Paper sx={{ height: 650, width: "100%" }} elevation={6}>
         <DataGrid
           rows={rows}

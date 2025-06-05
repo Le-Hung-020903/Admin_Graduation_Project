@@ -18,7 +18,9 @@ import FormControl from "@mui/material/FormControl"
 import InputLabel from "@mui/material/InputLabel"
 import MenuItem from "@mui/material/MenuItem"
 import Select, { SelectChangeEvent } from "@mui/material/Select"
-
+import { useSelector } from "react-redux"
+import { selectPermission } from "../../redux/slice/permission.slice"
+import { hasPermission } from "../../utils/hasPermission"
 const initialFormData = {
   id: 0,
   name: "",
@@ -76,22 +78,26 @@ export default function Category() {
       flex: 1,
       renderCell: (params) => (
         <Box>
-          <IconButton color="primary" onClick={() => handleOpen(params.row)}>
-            <EditIcon />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => handleDelete(params.row.id, params.row.name)}
-          >
-            <DeleteIcon />
-          </IconButton>
+          {hasPermission(permissions, "categories.update") && (
+            <IconButton color="primary" onClick={() => handleOpen(params.row)}>
+              <EditIcon />
+            </IconButton>
+          )}
+          {hasPermission(permissions, "categories.delete") && (
+            <IconButton
+              color="error"
+              onClick={() => handleDelete(params.row.id, params.row.name)}
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
         </Box>
       ),
       align: "center",
       headerAlign: "center"
     }
   ]
-
+  const permissions = useSelector(selectPermission)
   const [rows, setRows] = React.useState<ICategory[]>([])
   const [open, setOpen] = React.useState<boolean>(false)
   const [editingRow, setEditingRow] = React.useState<number | null>(null)
@@ -199,14 +205,16 @@ export default function Category() {
   return (
     <Box>
       <Box>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpen()}
-          sx={{ mb: 1 }}
-        >
-          Thêm mới
-        </Button>
+        {hasPermission(permissions, "categories.insert") && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleOpen()}
+            sx={{ mb: 1 }}
+          >
+            Thêm mới
+          </Button>
+        )}
       </Box>
       <Paper sx={{ height: 650, width: "100%" }} elevation={6}>
         <DataGrid

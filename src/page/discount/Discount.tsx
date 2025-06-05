@@ -27,6 +27,9 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { NAME_RULE } from "../../utils/validators"
 import Alert from "@mui/material/Alert"
 import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
+import { selectPermission } from "../../redux/slice/permission.slice"
+import { hasPermission } from "../../utils/hasPermission"
 
 const initialFormData: IDiscount = {
   content: "",
@@ -86,7 +89,7 @@ export default function Discount() {
         })
     }
   }
-
+  const permissions = useSelector(selectPermission)
   const handleSubmitForm = handleSubmit(onSubmit)
 
   const columns: GridColDef[] = [
@@ -150,15 +153,20 @@ export default function Discount() {
       width: 150,
       renderCell: (params) => (
         <Box>
-          <IconButton color="primary" onClick={() => handleOpen(params.row)}>
-            <EditIcon />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => handleDelete(params.row.id, params.row.content)}
-          >
-            <DeleteIcon />
-          </IconButton>
+          {hasPermission(permissions, "discounts.update") && (
+            <IconButton color="primary" onClick={() => handleOpen(params.row)}>
+              <EditIcon />
+            </IconButton>
+          )}
+
+          {hasPermission(permissions, "discounts.delete") && (
+            <IconButton
+              color="error"
+              onClick={() => handleDelete(params.row.id, params.row.content)}
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
         </Box>
       )
     }
@@ -231,14 +239,16 @@ export default function Discount() {
   return (
     <Box>
       <Box>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpen()}
-          sx={{ mb: 1 }}
-        >
-          Thêm mới
-        </Button>
+        {hasPermission(permissions, "discounts.insert") && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleOpen()}
+            sx={{ mb: 1 }}
+          >
+            Thêm mới
+          </Button>
+        )}
       </Box>
       <Paper sx={{ height: 650, width: "100%" }} elevation={6}>
         <DataGrid

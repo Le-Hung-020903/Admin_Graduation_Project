@@ -80,3 +80,17 @@ export interface IOrderPayload {
     price: number
   }[]
 }
+export interface IWebsocketOrder {
+  id: number
+  title: string
+  message: string
+  is_read: boolean
+  user_redirec_url: string | null
+  admin_redirec_url: string | null
+  receiver_role: "USER" | "ADMIN"
+  user: {
+    id: number
+  }
+  created_at: string
+  updated_at: string
+}

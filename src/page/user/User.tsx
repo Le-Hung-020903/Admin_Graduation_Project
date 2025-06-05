@@ -23,7 +23,7 @@ import OutlinedInput from "@mui/material/OutlinedInput"
 import {
   createRoleAPI,
   createUserAPI,
-  deleteDiscountAPI,
+  deleteUserAPI,
   getRoleAPI,
   getUserAPI,
   updateUserAPI
@@ -40,11 +40,13 @@ import {
 } from "../../utils/validators"
 import Alert from "@mui/material/Alert"
 import { toast } from "react-toastify"
-import { IROLE, IUser } from "../../interface/user"
+import { IUser } from "../../interface/user"
 import { IRole } from "../../interface/role"
 import { getPermissionAPI } from "../../redux/middleware/permission.middleware"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { AppDispatch } from "../../redux/store"
+import { selectPermission } from "../../redux/slice/permission.slice"
+import { hasPermission } from "../../utils/hasPermission"
 
 const initialFormData: IUser = {
   name: "",
@@ -56,6 +58,7 @@ const initialFormData: IUser = {
 
 export default function User() {
   const dispatch = useDispatch<AppDispatch>()
+  const permissions = useSelector(selectPermission)
   const [rows, setRow] = React.useState<IUser[]>([])
   const [open, setOpen] = React.useState<boolean>(false)
   const [roles, setRoles] = React.useState<IRole[]>([])
@@ -243,15 +246,19 @@ export default function User() {
       width: 150,
       renderCell: (params) => (
         <Box>
-          <IconButton color="primary" onClick={() => handleOpen(params.row)}>
-            <EditIcon />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => handleDelete(params.row.id, params.row.name)}
-          >
-            <DeleteIcon />
-          </IconButton>
+          {hasPermission(permissions, "users.update") && (
+            <IconButton color="primary" onClick={() => handleOpen(params.row)}>
+              <EditIcon />
+            </IconButton>
+          )}
+          {hasPermission(permissions, "users.delete") && (
+            <IconButton
+              color="error"
+              onClick={() => handleDelete(params.row.id, params.row.name)}
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
         </Box>
       )
     }
@@ -275,12 +282,12 @@ export default function User() {
   const handleDelete = (id: number, name: string) => {
     if (confirm(`Bạn có chắc chắn muốn mã ${name} xóa không?`)) {
       toast
-        .promise(deleteDiscountAPI(id), {
+        .promise(deleteUserAPI(id), {
           pending: "Đang xóa mã khuyến mãi"
         })
         .then((res) => {
           if (res.success) {
-            toast.success("Xóa mã khuyến mãi thành công!")
+            toast.success(res.message)
             setRow((pre) => {
               return pre.filter((row) => row.id !== id)
             })
@@ -328,16 +335,18 @@ export default function User() {
 
   return (
     <Box>
-      <Box>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpen()}
-          sx={{ mb: 1 }}
-        >
-          Thêm mới
-        </Button>
-      </Box>
+      {hasPermission(permissions, "users.insert") && (
+        <Box>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleOpen()}
+            sx={{ mb: 1 }}
+          >
+            Thêm mới
+          </Button>
+        </Box>
+      )}
       <Paper sx={{ height: 600, width: "100%" }} elevation={6}>
         <DataGrid
           rows={rows}

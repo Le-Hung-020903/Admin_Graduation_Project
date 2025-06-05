@@ -11,6 +11,9 @@ import authorizedAxiosInstance from "../../utils/axios"
 import { RemoveRedEye } from "@mui/icons-material"
 import { IProduct } from "../../interface/product"
 import { deleteProductAPI } from "../../api"
+import { useSelector } from "react-redux"
+import { selectPermission } from "../../redux/slice/permission.slice"
+import { hasPermission } from "../../utils/hasPermission"
 
 const Product = () => {
   const columns: GridColDef[] = [
@@ -68,18 +71,22 @@ const Product = () => {
       width: 150,
       renderCell: (params) => (
         <Box>
-          <Link to={`/product/${params.row.id}`}>
-            <IconButton color="primary">
-              <RemoveRedEye />
-            </IconButton>
-          </Link>
+          {hasPermission(permissions, "products.update") && (
+            <Link to={`/product/${params.row.id}`}>
+              <IconButton color="primary">
+                <RemoveRedEye />
+              </IconButton>
+            </Link>
+          )}
 
-          <IconButton
-            color="error"
-            onClick={() => handleDelete(params.row.id, params.row.name)}
-          >
-            <DeleteIcon />
-          </IconButton>
+          {hasPermission(permissions, "products.delete") && (
+            <IconButton
+              color="error"
+              onClick={() => handleDelete(params.row.id, params.row.name)}
+            >
+              <DeleteIcon />
+            </IconButton>
+          )}
         </Box>
       ),
       align: "center",
@@ -87,6 +94,7 @@ const Product = () => {
     }
   ]
 
+  const permissions = useSelector(selectPermission)
   const [rows, setRows] = React.useState<IProduct[]>([])
 
   const [pagination, setPagination] = React.useState({
@@ -139,11 +147,13 @@ const Product = () => {
   return (
     <Box>
       <Box>
-        <Link to="/product/create">
-          <Button variant="contained" color="primary" sx={{ mb: 1 }}>
-            Thêm mới
-          </Button>
-        </Link>
+        {hasPermission(permissions, "products.insert") && (
+          <Link to="/product/create">
+            <Button variant="contained" color="primary" sx={{ mb: 1 }}>
+              Thêm mới
+            </Button>
+          </Link>
+        )}
       </Box>
       <Paper sx={{ height: 650, width: "100%" }} elevation={6}>
         <DataGrid

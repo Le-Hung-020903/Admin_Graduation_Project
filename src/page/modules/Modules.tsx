@@ -23,6 +23,9 @@ import RemoveIcon from "@mui/icons-material/Remove"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import Alert from "@mui/material/Alert"
 import { createModulesAPI } from "../../api"
+import { useSelector } from "react-redux"
+import { selectPermission } from "../../redux/slice/permission.slice"
+import { hasPermission } from "../../utils/hasPermission"
 
 const initialFormData = {
   id: 0,
@@ -57,6 +60,7 @@ export default function Category() {
       })
   }
   const handleSubmitForm = handleSubmit(onSubmit)
+  const permissions = useSelector(selectPermission)
   const columns: GridColDef[] = [
     {
       field: "id",
@@ -162,16 +166,18 @@ export default function Category() {
 
   return (
     <Box>
-      <Box>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleOpen()}
-          sx={{ mb: 1 }}
-        >
-          Thêm mới
-        </Button>
-      </Box>
+      {hasPermission(permissions, "module.insert") && (
+        <Box>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleOpen()}
+            sx={{ mb: 1 }}
+          >
+            Thêm mới
+          </Button>
+        </Box>
+      )}
       <Paper sx={{ height: 650, width: "100%" }} elevation={6}>
         <DataGrid
           rows={rows}

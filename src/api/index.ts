@@ -209,7 +209,10 @@ export const getUserByNameAPI = async () => {
   const res = await authorizedAxiosInstance.get("user/get_name")
   return res.data
 }
-
+export const deleteUserAPI = async (id: number) => {
+  const res = await authorizedAxiosInstance.delete(`user/${id}`)
+  return res.data
+}
 // ORDER
 export const getOrderAPI = async (
   page: number,
@@ -257,4 +260,10 @@ export const getAddressAPI = async () => {
 export const createAddressAPI = async (data: IAddress) => {
   const res = await authorizedAxiosInstance.post("/address/create", data)
   return res.data
+}
+
+// NOTIFICATION
+export const getNotificationAPI = async () => {
+  const res = await authorizedAxiosInstance.get("/notifications/client")
+  return res.data.data
 }

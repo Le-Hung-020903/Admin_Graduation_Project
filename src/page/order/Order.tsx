@@ -16,9 +16,14 @@ import { IOrder } from "../../interface/order"
 import Typography from "@mui/material/Typography"
 import { Link, useNavigate } from "react-router-dom"
 import { formattedAmount } from "../../utils/formatMoney"
+import { useSelector } from "react-redux"
+import { selectPermission } from "../../redux/slice/permission.slice"
+import DeleteIcon from "@mui/icons-material/Delete"
+import { hasPermission } from "../../utils/hasPermission"
 
 export default function Order() {
   const navigate = useNavigate()
+  const permissions = useSelector(selectPermission)
 
   const [pagination, setPagination] = React.useState({
     total: 0,
@@ -166,6 +171,11 @@ export default function Order() {
               <RemoveRedEyeIcon />
             </IconButton>
           </Link>
+          {hasPermission(permissions, "orders.delete") && (
+            <IconButton color="error">
+              <DeleteIcon />
+            </IconButton>
+          )}
         </Box>
       )
     }
@@ -207,13 +217,15 @@ export default function Order() {
 
   return (
     <Box>
-      <Box>
-        <Link to={"/order/create"}>
-          <Button variant="contained" color="primary" sx={{ mb: 1 }}>
-            Thêm mới
-          </Button>
-        </Link>
-      </Box>
+      {hasPermission(permissions, "orders.insert") && (
+        <Box>
+          <Link to={"/order/create"}>
+            <Button variant="contained" color="primary" sx={{ mb: 1 }}>
+              Thêm mới
+            </Button>
+          </Link>
+        </Box>
+      )}
       <Stack
         direction={"row"}
         spacing={2}

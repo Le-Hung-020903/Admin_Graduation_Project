@@ -29,6 +29,11 @@ import { AppDispatch } from "./redux/store"
 import { getPermissionAPI } from "./redux/middleware/permission.middleware"
 import { hasPermissionToModule } from "./utils/checkPermission"
 import { selectUSer, setUser } from "./redux/slice/user.middleware"
+import { io } from "socket.io-client"
+import { toast } from "react-toastify"
+import { IWebsocketOrder } from "./interface/order"
+
+const socket = io(import.meta.env.VITE_API_URL)
 
 const App = () => {
   const dispatch = useDispatch<AppDispatch>()
@@ -52,6 +57,25 @@ const App = () => {
   useEffect(() => {
     if (user && permissions.length === 0) dispatch(getPermissionAPI())
   }, [dispatch, user, permissions])
+
+  useEffect(() => {
+    socket.emit("join_admin_room", "admin")
+
+    const handleNewOrder = (order: IWebsocketOrder) => {
+      console.log("🚀 ~ handleNewOrder ~ order:", order)
+      toast.success(
+        `Đơn hàng mới: ${
+          order.message || "Hãy nhấn vào quả chuông để xem thông báo mới nhất !"
+        }`
+      )
+    }
+
+    socket.on("notify_new_order", handleNewOrder)
+
+    return () => {
+      socket.off("notify_new_order", handleNewOrder)
+    }
+  }, [])
 
   if (loading) return null // đợi đến khi user được xác định
   const router = createBrowserRouter([

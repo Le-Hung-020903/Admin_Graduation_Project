@@ -4,7 +4,6 @@ import IconButton from "@mui/material/IconButton"
 import Typography from "@mui/material/Typography"
 import Tooltip from "@mui/material/Tooltip"
 import Avatar from "@mui/material/Avatar"
-import Badge from "@mui/material/Badge"
 import { Outlet, useNavigate, useLocation } from "react-router-dom"
 import MenuIcon from "@mui/icons-material/Menu"
 import HomeIcon from "@mui/icons-material/Home"
@@ -15,7 +14,6 @@ import DiscountIcon from "@mui/icons-material/Discount"
 import ControlCameraIcon from "@mui/icons-material/ControlCamera"
 import ViewModuleIcon from "@mui/icons-material/ViewModule"
 import GroupIcon from "@mui/icons-material/Group"
-import NotificationsIcon from "@mui/icons-material/Notifications"
 import { keyframes, Stack } from "@mui/system"
 import Divider from "@mui/material/Divider"
 import MenuList from "@mui/material/MenuList"
@@ -31,18 +29,10 @@ import { selectPermission } from "../redux/slice/permission.slice"
 import { AppDispatch } from "../redux/store"
 import { logoutUser } from "../redux/slice/user.middleware"
 import { hasPermissionToModule } from "../utils/checkPermission"
+import ModelNotification from "./ModelNotification"
 
 // Thêm keyframes cho hiệu ứng
-const ripple = keyframes`
-  0% {
-    transform: scale(0.5);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-`
+
 const Layout = () => {
   const dispatch = useDispatch<AppDispatch>()
   const permissions = useSelector(selectPermission)
@@ -209,34 +199,7 @@ const Layout = () => {
             zIndex: 1100
           }}
         >
-          <Tooltip title="Thông báo">
-            <IconButton
-              sx={{
-                mr: 2,
-                position: "relative",
-                "&:hover": {
-                  backgroundColor: "rgba(0, 0, 0, 0.05)"
-                }
-              }}
-            >
-              {/* Hiệu ứng sóng */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  animation: `${ripple} 2s infinite`,
-                  border: "2px solid",
-                  borderColor: "primary.main",
-                  pointerEvents: "none"
-                }}
-              />
-              <Badge badgeContent={4} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
+          <ModelNotification />
           <Stack direction="row" spacing={2} alignItems={"center"}>
             <Box>
               <Typography component={"p"} color="#0B0E14">
@@ -264,7 +227,6 @@ const Layout = () => {
               U
             </Avatar>
           </Stack>
-
           <Menu
             anchorEl={anchorEl}
             open={open}
