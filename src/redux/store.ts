@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit"
 import permissionReducer from "../redux/slice/permission.slice"
 import userReducer from "../redux/slice/user.middleware"
+import notificationReducer from "../redux/slice/notification.slice"
 
 export const store = configureStore({
   reducer: {
     permission: permissionReducer,
-    user: userReducer
+    user: userReducer,
+    notification: notificationReducer
   }
 })
 

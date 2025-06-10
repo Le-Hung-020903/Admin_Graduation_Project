@@ -23,26 +23,29 @@ import Modules from "./page/modules/Modules"
 import User from "./page/user/User"
 import CreateOrder from "./page/order/create/CreateOrder"
 import { useDispatch, useSelector } from "react-redux"
-import { selectPermission } from "./redux/slice/permission.slice"
+import { selectIsFetch, selectPermission } from "./redux/slice/permission.slice"
 import { useEffect, useState } from "react"
 import { AppDispatch } from "./redux/store"
 import { getPermissionAPI } from "./redux/middleware/permission.middleware"
 import { hasPermissionToModule } from "./utils/checkPermission"
 import { selectUSer, setUser } from "./redux/slice/user.middleware"
-import { io } from "socket.io-client"
-import { toast } from "react-toastify"
-import { IWebsocketOrder } from "./interface/order"
-
-const socket = io(import.meta.env.VITE_API_URL)
+import Unauthorized from "./page/unauthorized/Unauthorized"
 
 const App = () => {
   const dispatch = useDispatch<AppDispatch>()
   const permissions = useSelector(selectPermission)
   const user = useSelector(selectUSer)
+  const isFetched = useSelector(selectIsFetch)
   const [loading, setLoading] = useState<boolean>(true) // Trạng thái loading để đợi user được xác định
-
   const protectedRouter = () => {
-    if (!user) return <Navigate to={"/login"} replace={true} />
+    if (!user) return <Navigate to="/login" replace />
+
+    if (!isFetched) return null // Đợi permissions load xong
+
+    // Nếu không có quyền thì cần để truy cập 1 trong số các module thì
+    // cần chuyển về trang unauthozid
+    if (permissions.length === 0) return <Navigate to="/unauthorized" replace />
+
     return <Outlet />
   }
 
@@ -54,30 +57,13 @@ const App = () => {
     setLoading(false) // Sau khi đã set user xong, thay đổi trạng thái loading
   }, [dispatch, user])
 
+  // nếu isFetched = false thì là chưa fetch xong nên cần gọi lại dispatch
   useEffect(() => {
-    if (user && permissions.length === 0) dispatch(getPermissionAPI())
-  }, [dispatch, user, permissions])
-
-  useEffect(() => {
-    socket.emit("join_admin_room", "admin")
-
-    const handleNewOrder = (order: IWebsocketOrder) => {
-      console.log("🚀 ~ handleNewOrder ~ order:", order)
-      toast.success(
-        `Đơn hàng mới: ${
-          order.message || "Hãy nhấn vào quả chuông để xem thông báo mới nhất !"
-        }`
-      )
-    }
-
-    socket.on("notify_new_order", handleNewOrder)
-
-    return () => {
-      socket.off("notify_new_order", handleNewOrder)
-    }
-  }, [])
+    if (user && !isFetched) dispatch(getPermissionAPI())
+  }, [dispatch, user, isFetched])
 
   if (loading) return null // đợi đến khi user được xác định
+
   const router = createBrowserRouter([
     {
       path: "/",
@@ -87,7 +73,10 @@ const App = () => {
           path: "/",
           element: <Layout />,
           children: [
-            { index: true, element: <Home /> },
+            {
+              index: true,
+              element: <Home />
+            },
             {
               path: "product",
               element: hasPermissionToModule(permissions, "products") ? (
@@ -206,7 +195,8 @@ const App = () => {
     {
       path: "/login",
       element: user ? <Navigate to="/" replace /> : <Login />
-    }
+    },
+    { path: "/unauthorized", element: <Unauthorized /> }
   ])
 
   return <RouterProvider router={router} />

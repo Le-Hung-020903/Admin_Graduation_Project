@@ -14,7 +14,7 @@ import DiscountIcon from "@mui/icons-material/Discount"
 import ControlCameraIcon from "@mui/icons-material/ControlCamera"
 import ViewModuleIcon from "@mui/icons-material/ViewModule"
 import GroupIcon from "@mui/icons-material/Group"
-import { keyframes, Stack } from "@mui/system"
+import Stack from "@mui/system/Stack"
 import Divider from "@mui/material/Divider"
 import MenuList from "@mui/material/MenuList"
 import MenuItem from "@mui/material/MenuItem"
@@ -30,8 +30,6 @@ import { AppDispatch } from "../redux/store"
 import { logoutUser } from "../redux/slice/user.middleware"
 import { hasPermissionToModule } from "../utils/checkPermission"
 import ModelNotification from "./ModelNotification"
-
-// Thêm keyframes cho hiệu ứng
 
 const Layout = () => {
   const dispatch = useDispatch<AppDispatch>()

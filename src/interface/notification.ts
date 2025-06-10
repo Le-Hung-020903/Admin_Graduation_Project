@@ -3,8 +3,8 @@ export interface INotifications {
   title: string
   message: string
   is_read: boolean
-  user_redirec_url: string | null
-  admin_redirec_url: null
+  user_redirec_url: null
+  admin_redirec_url: string | null
   created_at: string
-  receiver_role: "USER"
+  receiver_role: "ADMIN"
 }

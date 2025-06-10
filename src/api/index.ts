@@ -18,6 +18,8 @@ export const createProductAPI = async (
   formData.append("manufacturer_id", data.manufacturer_id.toString())
   formData.append("desc_html", data.desc_html)
   formData.append("desc_markdown", data.desc_markdown)
+  formData.append("expiry_date", data.expiry_date)
+  formData.append("manufacture_date", data.manufacture_date)
 
   // Thêm các biển thể
   data.variants.forEach((variant, index) => {
@@ -66,6 +68,8 @@ export const updateProductAPI = async (
   formData.append("manufacturer_id", data.manufacturer_id.toString())
   formData.append("desc_html", data.desc_html)
   formData.append("desc_markdown", data.desc_markdown)
+  formData.append("expiry_date", data.expiry_date)
+  formData.append("manufacture_date", data.manufacture_date)
 
   // Thêm các biển thể
   data.variants.forEach((variant, index) => {
@@ -264,6 +268,22 @@ export const createAddressAPI = async (data: IAddress) => {
 
 // NOTIFICATION
 export const getNotificationAPI = async () => {
-  const res = await authorizedAxiosInstance.get("/notifications/client")
+  const res = await authorizedAxiosInstance.get("/notifications/admin")
   return res.data.data
+}
+export const updateNotificationAPI = async (
+  id: number,
+  { is_read }: { is_read: boolean }
+) => {
+  const res = await authorizedAxiosInstance.patch(
+    `/notifications/admin/${id}`,
+    {
+      is_read
+    }
+  )
+  return res.data
+}
+export const deleteNotificationAPI = async (id: number) => {
+  const res = await authorizedAxiosInstance.delete(`/notifications/${id}`)
+  return res.data
 }

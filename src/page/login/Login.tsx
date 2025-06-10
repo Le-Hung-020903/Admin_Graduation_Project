@@ -3,8 +3,6 @@ import {
   Box,
   Button,
   Card,
-  Checkbox,
-  FormControlLabel,
   FormLabel,
   TextField,
   Typography,
@@ -19,12 +17,15 @@ import {
   PASSWORD_RULE_MESSAGE
 } from "../../utils/validators"
 import authorizedAxiosInstance from "../../utils/axios"
+import VisibilityIcon from "@mui/icons-material/Visibility"
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { AppDispatch } from "../../redux/store"
 import { getPermissionAPI } from "../../redux/middleware/permission.middleware"
 import { setUser } from "../../redux/slice/user.middleware"
+import { useState } from "react"
 
 type Inputs = {
   email: string
@@ -34,6 +35,7 @@ type Inputs = {
 export default function Login() {
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
+  const [hiddenPassword, setHiddenPassword] = useState<boolean>(true)
   const {
     register,
     handleSubmit,
@@ -62,7 +64,7 @@ export default function Login() {
         minHeight: "100vh",
         alignItems: "center",
         justifyContent: "center",
-        background: 'url("/login-bg.jpg")',
+        background: 'url("/images/login-bg.jpg")',
         backgroundRepeat: "no-repeat",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -71,11 +73,27 @@ export default function Login() {
     >
       <form onSubmit={handleSubmit(onSubmit)}>
         <Zoom in={true} style={{ transitionDelay: "200ms" }}>
-          <Card variant="outlined">
+          <Card
+            variant="outlined"
+            sx={{
+              px: 4,
+              py: 8,
+              width: "400px"
+            }}
+          >
+            <Box>
+              <img src={"/images/Logo.png"} alt="Logo" />
+            </Box>
+
             <Typography
               component="h1"
               variant="h4"
-              sx={{ width: "100%", fontSize: "clamp(2rem, 10vw, 2.15rem)" }}
+              sx={{
+                width: "100%",
+                fontSize: "clamp(2rem, 10vw, 2.15rem)",
+                mb: 5,
+                mt: 3
+              }}
             >
               Sign in
             </Typography>
@@ -120,10 +138,16 @@ export default function Login() {
                   </Alert>
                 )}
               </Box>
-              <Box>
+              <Box
+                my={2}
+                sx={{
+                  position: "relative"
+                }}
+              >
+                <FormLabel htmlFor="password">Password</FormLabel>
                 <TextField
                   placeholder="••••••"
-                  type="password"
+                  type={hiddenPassword ? "password" : "text"}
                   id="password"
                   autoComplete="current-password"
                   required
@@ -138,6 +162,23 @@ export default function Login() {
                     }
                   })}
                 />
+                <Box
+                  onClick={() => {
+                    setHiddenPassword((pre) => !pre)
+                  }}
+                  sx={{
+                    cursor: "pointer",
+                    position: "absolute",
+                    top: "50%",
+                    right: "5%"
+                  }}
+                >
+                  {!hiddenPassword ? (
+                    <VisibilityOffIcon sx={{ color: "gray" }} />
+                  ) : (
+                    <VisibilityIcon sx={{ color: "gray" }} />
+                  )}
+                </Box>
                 {errors.password && (
                   <Alert
                     severity="error"
@@ -150,10 +191,6 @@ export default function Login() {
                   </Alert>
                 )}
               </Box>
-              <FormControlLabel
-                control={<Checkbox value="remember" color="primary" />}
-                label="Remember me"
-              />
               <Button
                 type="submit"
                 fullWidth

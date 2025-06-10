@@ -119,17 +119,18 @@ const CreateOrder = () => {
     }))
   }
 
+  // Xoá biến thể
   const handleDelete = (index: number) => {
     const newInputs = inputs.filter((_, i) => i !== index)
     setInputs(newInputs)
   }
 
+  // Tạo đơn hàng
   const handleCreateOrder = () => {
     const data: IOrderPayload = {
       ...order,
       order_details: inputs
     }
-    console.log("data", data)
 
     toast.promise(createOrderAPI(data), {}).then((res) => {
       if (res.success) {
@@ -141,6 +142,7 @@ const CreateOrder = () => {
     })
   }
 
+  // Tính final_price khi chọn discount
   useEffect(() => {
     const discount = discountList.find((d) => d.id === order.discount_id)
     const percent = discount?.percent || 0
@@ -158,6 +160,7 @@ const CreateOrder = () => {
     }))
   }, [inputs, order.discount_id, discountList])
 
+  // Set địa chỉ cho order
   useEffect(() => {
     if (selectedAddressId !== null) {
       setOrder((pre) => ({
@@ -167,6 +170,7 @@ const CreateOrder = () => {
     }
   }, [selectedAddressId])
 
+  // Call api khi mới vào
   useEffect(() => {
     const fetchProductList = async () => {
       const res = await getProductList()

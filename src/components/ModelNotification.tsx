@@ -13,48 +13,104 @@ import dayjs from "dayjs"
 import NotificationsIcon from "@mui/icons-material/Notifications"
 import Badge from "@mui/material/Badge"
 import { INotifications } from "../interface/notification"
-import { getNotificationAPI } from "../api"
+import { deleteNotificationAPI, updateNotificationAPI } from "../api"
+import { toast } from "react-toastify"
+import { useDispatch, useSelector } from "react-redux"
+import {
+  addNotification,
+  selectIsFetched,
+  selectLengthNotification,
+  selectNotifications
+} from "../redux/slice/notification.slice"
+import { AppDispatch } from "../redux/store"
+import { getNotificationsMiddleware } from "../redux/middleware/notification.middleware"
+import { Link } from "react-router-dom"
+import { initSocket } from "../utils/socket"
+import { IWebsocketOrder } from "../interface/order"
 
 const ripple = keyframes`
-  0% {
-    transform: scale(0.5);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-`
+    0% {
+      transform: scale(0.5);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  `
 
 export default function ModelNotification() {
+  const socket = initSocket()
+  const notifications = useSelector(selectNotifications)
+  const isFetch = useSelector(selectIsFetched)
+  const lengthNotification = useSelector(selectLengthNotification)
+  const dispatch = useDispatch<AppDispatch>()
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null)
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget)
   }
 
-  const handleDeleteNotification = (id: number) => {
-    // if(confirm)
+  const handleReadNotification = async (id: number) => {
+    toast
+      .promise(updateNotificationAPI(id, { is_read: true }), {})
+      .then((res) => {
+        if (res.success && res.message === "Cập nhật thông báo thành công") {
+          dispatch(getNotificationsMiddleware())
+        }
+      })
   }
+
+  const handleDeleteNotification = (id: number) => {
+    toast.promise(deleteNotificationAPI(id), {}).then((res) => {
+      if (res.success && res.message === "Xoá thông báo thành công") {
+        dispatch(getNotificationsMiddleware())
+      }
+    })
+  }
+
   const handleClose = () => {
     setAnchorEl(null)
   }
 
   const open = Boolean(anchorEl)
   const id = open ? "simple-popover" : undefined
-  const [notifications, setNotifications] = React.useState<
-    INotifications[] | null
-  >(null)
+
+  // Tham gia phòng để nhận được thônng báo
+  React.useEffect(() => {
+    socket.emit("join_admin_room", "admin")
+
+    const handleNewOrder = (order: IWebsocketOrder) => {
+      toast.success(
+        `Đơn hàng mới: ${
+          order.message || "Hãy nhấn vào quả chuông để xem thông báo mới nhất !"
+        }`
+      )
+
+      const notification = {
+        id: order.id,
+        title: order.title,
+        message: order.message,
+        is_read: order.is_read,
+        user_redirec_url: null,
+        admin_redirec_url: order.admin_redirec_url,
+        created_at: order.created_at,
+        receiver_role: "ADMIN" as const
+      }
+      dispatch(addNotification(notification))
+    }
+
+    socket.on("notify_new_order", handleNewOrder)
+
+    return () => {
+      socket.off("notify_new_order", handleNewOrder)
+    }
+  }, [socket, dispatch])
 
   React.useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!open || notifications) return
-      const res = await getNotificationAPI()
-      setNotifications(res)
-      console.log("data", res)
-    }
-    fetchNotifications()
-  }, [open, notifications])
+    if (!isFetch) dispatch(getNotificationsMiddleware())
+  }, [isFetch, dispatch])
+
   return (
     <div>
       <Box>
@@ -82,7 +138,7 @@ export default function ModelNotification() {
                   pointerEvents: "none"
                 }}
               />
-              <Badge badgeContent={4} color="error">
+              <Badge badgeContent={lengthNotification} color="error">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
@@ -134,6 +190,8 @@ export default function ModelNotification() {
             </Stack>
             <Box
               sx={{
+                maxHeight: 350,
+                overflowY: "auto",
                 mt: 2,
                 "& > .MuiBox-root": {
                   cursor: "pointer"
@@ -143,61 +201,74 @@ export default function ModelNotification() {
               {notifications && notifications.length > 0 ? (
                 notifications?.map((item: INotifications) => {
                   return (
-                    <Box
+                    <Link
+                      to={item.admin_redirec_url ?? "/"}
                       key={item.id}
-                      sx={{
-                        mt: 1,
-                        p: 1,
-                        bgcolor: `${item.is_read ? "" : "#e0e0e0"}`,
-                        borderRadius: 3,
-                        border: "1px solid #e0e0e0",
-                        position: "relative",
-                        "&:hover .MuiBox-root": {
-                          display: "block"
-                        }
+                      style={{
+                        textDecoration: "none",
+                        color: "inherit"
                       }}
                     >
                       <Box
+                        onClick={() => handleReadNotification(item.id)}
                         sx={{
-                          display: "none",
-                          position: "absolute",
-                          top: "50%",
-                          right: "1%",
-                          transform: "translateY(-50%) rotate(90deg)"
+                          mt: 1,
+                          p: 1,
+                          bgcolor: `${item.is_read ? "" : "#e0e0e0"}`,
+                          borderRadius: 3,
+                          border: "1px solid #e0e0e0",
+                          position: "relative",
+                          "&:hover .MuiBox-root": {
+                            display: "block"
+                          }
                         }}
                       >
-                        <Tooltip title="Xoá thông báo">
-                          <IconButton
-                            aria-label="more options"
-                            onClick={() => handleDeleteNotification(id)}
-                          >
-                            <MoreVertIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                      <Stack
-                        direction={"row"}
-                        alignItems={"center"}
-                        justifyContent={"space-between"}
-                      >
-                        <Typography variant="body2">{item.title}</Typography>
-                        <Typography
-                          component={"span"}
+                        <Box
                           sx={{
-                            fontSize: "13px"
+                            display: "none",
+                            position: "absolute",
+                            top: "50%",
+                            right: "1%",
+                            transform: "translateY(-50%) rotate(90deg)"
                           }}
                         >
-                          {dayjs(item.created_at).format("DD/MM/YYYY")}
+                          <Tooltip title="Xoá thông báo">
+                            <IconButton
+                              aria-label="more options"
+                              onClick={(e) => {
+                                e.stopPropagation() // 🔒 Ngăn nổi bọt lên Box
+                                e.preventDefault() // ❌ Ngăn Link chuyển trang
+                                handleDeleteNotification(item.id)
+                              }}
+                            >
+                              <MoreVertIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                        <Stack
+                          direction={"row"}
+                          alignItems={"center"}
+                          justifyContent={"space-between"}
+                        >
+                          <Typography variant="body2">{item.title}</Typography>
+                          <Typography
+                            component={"span"}
+                            sx={{
+                              fontSize: "13px"
+                            }}
+                          >
+                            {dayjs(item.created_at).format("DD/MM/YYYY")}
+                          </Typography>
+                        </Stack>
+                        <Typography
+                          sx={{
+                            mt: 0.6
+                          }}
+                        >
+                          {item.message}
                         </Typography>
-                      </Stack>
-                      <Typography
-                        sx={{
-                          mt: 0.6
-                        }}
-                      >
-                        {item.message}
-                      </Typography>
-                    </Box>
+                      </Box>
+                    </Link>
                   )
                 })
               ) : (

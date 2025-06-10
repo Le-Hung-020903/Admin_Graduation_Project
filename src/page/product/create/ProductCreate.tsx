@@ -7,7 +7,7 @@ import InputLabel from "@mui/material/InputLabel"
 import Select from "@mui/material/Select"
 import TextField from "@mui/material/TextField"
 import Typography from "@mui/material/Typography"
-import { SubmitHandler, useForm } from "react-hook-form"
+import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import MenuItem from "@mui/material/MenuItem"
 import CloudUploadIcon from "@mui/icons-material/CloudUpload"
 import CancelIcon from "@mui/icons-material/Cancel"
@@ -29,6 +29,11 @@ import { NAME_RULE } from "../../../utils/validators"
 import { toast } from "react-toastify"
 import { createProductAPI } from "../../../api"
 import { Link } from "react-router-dom"
+import { DemoContainer } from "@mui/x-date-pickers/internals/demo"
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
+import { DatePicker } from "@mui/x-date-pickers/DatePicker"
+import dayjs from "dayjs"
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -48,13 +53,20 @@ export default function ProductCreate() {
     handleSubmit,
     setValue,
     reset,
+    control,
     formState: { errors }
   } = useForm<IProductFormData>({
     mode: "onBlur"
   })
   const onSubmit: SubmitHandler<IProductFormData> = (data) => {
+    const formattedData = {
+      ...data,
+      expiry_date: dayjs(data.expiry_date).format("YYYY-MM-DD"),
+      manufacture_date: dayjs(data.manufacture_date).format("YYYY-MM-DD")
+    }
+
     toast
-      .promise(createProductAPI(data, files), {
+      .promise(createProductAPI(formattedData, files), {
         pending: "Đang tạo sản phẩm..."
       })
       .then((res) => {
@@ -311,7 +323,60 @@ export default function ProductCreate() {
               </FormControl>
             </Stack>
           </Box>
+          <Box>
+            <Typography component={"h4"} sx={{ mt: 3, mb: 1 }}>
+              Ngày sản xuất và hạn sử dụng
+            </Typography>
+            <Stack direction={"row"} spacing={3}>
+              <Controller
+                name="manufacture_date"
+                control={control}
+                rules={{ required: "Vui lòng chọn ngày sản xuất" }}
+                render={({ field }) => (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DemoContainer components={["DatePicker"]}>
+                      <DatePicker
+                        label="Ngày sản xuất"
+                        {...field}
+                        value={field.value ? dayjs(field.value) : null}
+                        onChange={field.onChange}
+                        slotProps={{
+                          textField: {
+                            error: !!errors.manufacture_date,
+                            helperText: errors.manufacture_date?.message
+                          }
+                        }}
+                      />
+                    </DemoContainer>
+                  </LocalizationProvider>
+                )}
+              />
 
+              <Controller
+                name="expiry_date"
+                control={control}
+                rules={{ required: "Vui lòng chọn hạn sử dụng" }}
+                render={({ field }) => (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DemoContainer components={["DatePicker"]}>
+                      <DatePicker
+                        label="Hạn sử dụng"
+                        {...field}
+                        value={field.value ? dayjs(field.value) : null}
+                        onChange={field.onChange}
+                        slotProps={{
+                          textField: {
+                            error: !!errors.expiry_date,
+                            helperText: errors.expiry_date?.message
+                          }
+                        }}
+                      />
+                    </DemoContainer>
+                  </LocalizationProvider>
+                )}
+              />
+            </Stack>
+          </Box>
           <Box>
             <Typography component={"h4"} sx={{ mt: 3, mb: 1 }}>
               Mô tả sản phẩm

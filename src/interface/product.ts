@@ -66,5 +66,7 @@ export interface IProductFormData {
   }[]
   manufacturer_id: number
   desc_markdown: string
+  manufacture_date: string
+  expiry_date: string
   desc_html: string
 }
