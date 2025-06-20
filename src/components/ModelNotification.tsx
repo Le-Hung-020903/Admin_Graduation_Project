@@ -27,6 +27,7 @@ import { getNotificationsMiddleware } from "../redux/middleware/notification.mid
 import { Link } from "react-router-dom"
 import { initSocket } from "../utils/socket"
 import { IWebsocketOrder } from "../interface/order"
+import { Howl } from "howler"
 
 const ripple = keyframes`
     0% {
@@ -46,6 +47,10 @@ export default function ModelNotification() {
   const lengthNotification = useSelector(selectLengthNotification)
   const dispatch = useDispatch<AppDispatch>()
   const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null)
+  const orderNotificationSound = new Howl({
+    src: ["/audios/orderNotificationSound.mp3"],
+    volume: 1
+  })
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget)
@@ -75,17 +80,40 @@ export default function ModelNotification() {
 
   const open = Boolean(anchorEl)
   const id = open ? "simple-popover" : undefined
-
   // Tham gia phòng để nhận được thônng báo
   React.useEffect(() => {
     socket.emit("join_admin_room", "admin")
 
     const handleNewOrder = (order: IWebsocketOrder) => {
-      toast.success(
-        `Đơn hàng mới: ${
-          order.message || "Hãy nhấn vào quả chuông để xem thông báo mới nhất !"
-        }`
-      )
+      const message =
+        order.message || "Hãy nhấn vào quả chuông để xem thông báo mới nhất !"
+      console.log("link", order.admin_redirec_url)
+
+      // 🔊 Play âm thanh nếu chưa phát
+      if (!orderNotificationSound.playing()) {
+        orderNotificationSound.play()
+      }
+
+      // ✅ Nếu đang ở tab hiện tại → toast
+      if (document.visibilityState === "visible") {
+        toast.success(`Đơn hàng mới: ${message}`)
+      }
+
+      // ✅ Nếu đang ở tab khác → dùng Notification API
+      if (
+        document.visibilityState === "hidden" &&
+        Notification.permission === "granted"
+      ) {
+        const myNotification = new Notification("Có đơn hàng mới nè!", {
+          icon: "https://cdn-icons-png.flaticon.com/512/891/891419.png",
+          body: message
+        })
+        myNotification.onclick = () => {
+          window.location.href = `${import.meta.env.VITE_BASE_URL}${
+            order.admin_redirec_url ?? ""
+          }`
+        }
+      }
 
       const notification = {
         id: order.id,
@@ -106,6 +134,12 @@ export default function ModelNotification() {
       socket.off("notify_new_order", handleNewOrder)
     }
   }, [socket, dispatch])
+
+  React.useEffect(() => {
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission()
+    }
+  }, [])
 
   React.useEffect(() => {
     if (!isFetch) dispatch(getNotificationsMiddleware())

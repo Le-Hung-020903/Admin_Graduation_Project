@@ -27,17 +27,37 @@ import ExitToAppIcon from "@mui/icons-material/ExitToApp"
 import { useDispatch, useSelector } from "react-redux"
 import { selectPermission } from "../redux/slice/permission.slice"
 import { AppDispatch } from "../redux/store"
-import { logoutUser } from "../redux/slice/user.middleware"
+import { logoutUser, selectUSer } from "../redux/slice/user.middleware"
 import { hasPermissionToModule } from "../utils/checkPermission"
 import ModelNotification from "./ModelNotification"
+import { keyframes } from "@mui/system"
+import CampaignIcon from "@mui/icons-material/Campaign"
+import { Howl } from "howler"
 
+const ripple = keyframes`
+    0% {
+      transform: scale(0.5);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  `
 const Layout = () => {
   const dispatch = useDispatch<AppDispatch>()
   const permissions = useSelector(selectPermission)
+  const user = useSelector(selectUSer)
   const [expanded, setExpanded] = useState<boolean>(true)
   const navigate = useNavigate()
   const location = useLocation()
-
+  const handleUnlockNotification = () => {
+    const sound = new Howl({
+      src: ["/audios/unlockNotification.mp3"],
+      volume: 1
+    })
+    sound.play()
+  }
   const isActive = (path: string) => location.pathname === path
   const activeBgColor = "#DADDE3"
   const defaultBgColor = "transparent"
@@ -197,11 +217,49 @@ const Layout = () => {
             zIndex: 1100
           }}
         >
+          <Box onClick={handleUnlockNotification}>
+            <Tooltip title="Bật loa thông báo">
+              <IconButton
+                sx={{
+                  mr: 2,
+                  position: "relative",
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 0, 0, 0.05)"
+                  }
+                }}
+              >
+                {/* Hiệu ứng sóng */}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    animation: `${ripple} 2s infinite`,
+                    border: "2px solid",
+                    borderColor: "primary.main",
+                    pointerEvents: "none"
+                  }}
+                />
+                <CampaignIcon
+                  sx={{
+                    fontSize: "30px"
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+          </Box>
           <ModelNotification />
           <Stack direction="row" spacing={2} alignItems={"center"}>
             <Box>
-              <Typography component={"p"} color="#0B0E14">
-                Gami
+              <Typography
+                component={"p"}
+                color="#0B0E14"
+                sx={{
+                  textTransform: "capitalize"
+                }}
+              >
+                {user?.name || "Admin"}
               </Typography>
               <Typography
                 component={"span"}
@@ -251,7 +309,13 @@ const Layout = () => {
                 <ListItemIcon>
                   <AccountCircleIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText>Gami</ListItemText>
+                <ListItemText
+                  sx={{
+                    textTransform: "capitalize"
+                  }}
+                >
+                  {user?.name || "Admin"}
+                </ListItemText>
               </MenuItem>
 
               <Divider />

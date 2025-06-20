@@ -287,3 +287,14 @@ export const deleteNotificationAPI = async (id: number) => {
   const res = await authorizedAxiosInstance.delete(`/notifications/${id}`)
   return res.data
 }
+
+// STATS
+export const getStatsAPI = async () => {
+  const res = await authorizedAxiosInstance.get("/stats/summary")
+  return res.data
+}
+
+export const getStatRevenueAPI = async () => {
+  const res = await authorizedAxiosInstance.get("/stats/monthly-revenue")
+  return res.data
+}
